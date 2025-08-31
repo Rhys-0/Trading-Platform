@@ -13,6 +13,10 @@ variables:
   publishDir: '$(Build.ArtifactStagingDirectory)/publish'
 
 steps:
+- checkout: self
+  fetchDepth: 0  # Fetch full history
+  persistCredentials: true
+
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
   inputs:
@@ -43,12 +47,6 @@ steps:
 
 - task: SonarCloudAnalyze@3
   displayName: 'Run SonarCloud analysis'
-
-# Publish Quality Gate Result task
-- task: SonarCloudPublish@3
-  displayName: 'Publish SonarCloud analysis'
-  inputs:
-    pollingTimeoutSec: '300'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run Tests'
