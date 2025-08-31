@@ -11,6 +11,13 @@ namespace TradingApp.Data {
         public DatabaseConnection(IConfiguration configuration, ILogger<DatabaseConnection>? logger = null) {
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string not found, add it to your appsettings.json");
+
+            // Put this under "AllowedHosts" in appsettings.json
+
+            // "ConnectionStrings": {
+            //     "DefaultConnection": ""
+            // }
+        
             _logger = logger;
         }
 
@@ -20,8 +27,9 @@ namespace TradingApp.Data {
                 await connection.OpenAsync();
                 _logger?.LogDebug("Database connection opened successfully");
                 return connection;
-            } catch (Exception) {
-                _logger?.LogError("Failed to open database connection");
+            } catch (Exception ex) {
+                _logger?.LogCritical($"Failed to open database connection: {ex}");
+                _logger?.LogInformation(_connectionString);
                 throw;
             }
         }

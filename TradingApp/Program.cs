@@ -9,6 +9,9 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddSingleton<DatabaseConnection>();
 
+// Database manager methods
+builder.Services.AddScoped<LoginManager>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
