@@ -1,5 +1,6 @@
 trigger:
 - main
+- pipeline-dev
 
 pool:
   vmImage: windows-latest
