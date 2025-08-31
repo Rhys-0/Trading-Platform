@@ -25,12 +25,30 @@ steps:
     command: 'restore'
     projects: '$(projectPath)'
 
+# Prepare sonarcloud analysis
+- task: SonarCloudPrepare@3
+  displayName: 'Prepare SonarCloud analysis'
+  inputs:
+    SonarCloud: 'SonarQube-Connection'
+    organization: 'rhys-0'
+    scannerMode: 'dotnet'
+    projectKey: 'Rhys-0_Trading-Platform'
+
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
     command: 'build'
     projects: '$(projectPath)'
     arguments: '--configuration $(buildConfiguration)'
+
+- task: SonarCloudAnalyze@3
+  displayName: 'Run SonarCloud analysis'
+
+# Publish Quality Gate Result task
+- task: SonarCloudPublish@3
+  displayName: 'Publish SonarCloud analysis'
+  inputs:
+    pollingTimeoutSec: '300'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run Tests'
