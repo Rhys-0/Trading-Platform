@@ -1,5 +1,6 @@
 ﻿@page "/"
 @layout Layout.EmptyLayout
+@inject Data.LoginManager LoginManager
 
 <PageTitle>Home</PageTitle>
 
@@ -8,3 +9,11 @@
 Welcome to your new app.
 
 <a href="dashboard">Dashboard</a>
+
+@code {
+    // basic demo of how to call functions on page load
+    // To be removed later
+    protected override async Task OnInitializedAsync(){
+        //await LoginManager.GetPasswordHash("abc");
+    }
+}
