@@ -1,5 +1,6 @@
 using TradingApp.Components;
 using TradingApp.Data;
+using TradingApp.Data.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<DatabaseConnection>();
 
 // Database manager methods
-builder.Services.AddScoped<LoginManager>();
+builder.Services.AddScoped<ILoginManager, LoginManager>();
 
 var app = builder.Build();
 

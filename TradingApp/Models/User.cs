@@ -1,14 +1,14 @@
 ﻿using TradingApp.Models.Interfaces;
 
 namespace TradingApp.Models {
-    public class User : IUser {
-        public int Id { get; }
-        public string Username { get; } // No set needed unless users being able to change their username is implemented
-        public string Email { get; } // No set needed unless users being able to change their emails is implemented
-        public string FirstName { get; }
-        public string LastName { get; } 
-        public decimal StartingCashBalance { get; }
-        public decimal CurrentCashBalance { get; private set; }
+    internal class User : IUser {
+        internal int Id { get; }
+        internal string Username { get; } // No set needed unless users being able to change their username is implemented
+        internal string Email { get; } // No set needed unless users being able to change their emails is implemented
+        internal string FirstName { get; }
+        internal string LastName { get; }
+        internal decimal StartingCashBalance { get; }
+        internal decimal CurrentCashBalance { get; private set; }
 
         // to add
         // current positions

@@ -4,7 +4,7 @@ using TradingApp.Data.Interfaces;
 using TradingApp.Models;
 
 namespace TradingApp.Data {
-    public class LoginManager : ILoginManager {
+    internal class LoginManager : ILoginManager {
         private readonly DatabaseConnection _connection;
         public LoginManager(DatabaseConnection connection) {
             _connection = connection;
