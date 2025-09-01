@@ -2,19 +2,17 @@
 
 namespace TradingApp.Models {
     internal class User : IUser {
-        internal int Id { get; }
-        internal string Username { get; } // No set needed unless users being able to change their username is implemented
-        internal string Email { get; } // No set needed unless users being able to change their emails is implemented
-        internal string FirstName { get; }
-        internal string LastName { get; }
-        internal decimal StartingCashBalance { get; }
-        internal decimal CurrentCashBalance { get; private set; }
+        public int Id { get; }
+        public string Username { get; } // No set needed unless users being able to change their username is implemented
+        public string Email { get; } // No set needed unless users being able to change their emails is implemented
+        public string FirstName { get; }
+        public string LastName { get; }
+        public decimal StartingCashBalance { get; }
+        public decimal CurrentCashBalance { get; private set; }
+        public IPortfolio? Portfolio { get; private set; }
+        public List<ITrade>? Trades { get; set; }
 
-        // to add
-        // current positions
-        // portfolio statistics
-
-        public User(int id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
+        internal User(int id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
             Id = id;
             Username = username;
             Email = email;
@@ -24,12 +22,12 @@ namespace TradingApp.Models {
             CurrentCashBalance = currentCashBalance;
         }
 
-        public void AddCash(decimal amount) {
+        public void LoadTrades() {
             throw new NotImplementedException();
         }
 
-        public void RemoveCash(decimal amount) { 
-            throw new NotImplementedException(); 
-        } 
+        public void LoadPortfolio() {
+            throw new NotImplementedException();
+        }
     }
 }
