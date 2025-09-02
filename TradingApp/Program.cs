@@ -1,11 +1,17 @@
 using TradingApp.Components;
 using TradingApp.Data;
+using TradingApp.Data.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddSingleton<DatabaseConnection>();
+
+// Database manager methods
+builder.Services.AddScoped<ILoginManager, LoginManager>();
 
 builder.Services.AddSingleton<NewsService>();
 
@@ -27,4 +33,4 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.Run();
+await app.RunAsync();

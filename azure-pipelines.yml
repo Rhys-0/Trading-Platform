@@ -1,5 +1,6 @@
 trigger:
 - main
+- pipeline-dev
 
 pool:
   vmImage: windows-latest
@@ -12,6 +13,10 @@ variables:
   publishDir: '$(Build.ArtifactStagingDirectory)/publish'
 
 steps:
+- checkout: self
+  fetchDepth: 0  # Fetch full history
+  persistCredentials: true
+
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
   inputs:
@@ -24,12 +29,24 @@ steps:
     command: 'restore'
     projects: '$(projectPath)'
 
+# Prepare sonarcloud analysis
+- task: SonarCloudPrepare@3
+  displayName: 'Prepare SonarCloud analysis'
+  inputs:
+    SonarCloud: 'SonarQube-Connection'
+    organization: 'rhys-0'
+    scannerMode: 'dotnet'
+    projectKey: 'Rhys-0_Trading-Platform'
+
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
     command: 'build'
     projects: '$(projectPath)'
     arguments: '--configuration $(buildConfiguration)'
+
+- task: SonarCloudAnalyze@3
+  displayName: 'Run SonarCloud analysis'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run Tests'
