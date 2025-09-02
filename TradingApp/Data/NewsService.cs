@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace TradingApp.Data
 {
-    public class NewsArticle
+    internal class NewsArticle
     {
         public string Title { get; set; } = "";
         public string Description { get; set; } = "";
@@ -13,10 +13,10 @@ namespace TradingApp.Data
         public string Source { get; set; } = "";
     }
 
-    public class NewsService
+    internal class NewsService
     {
         // Mock data (later hook up to real API)
-        public Task<List<NewsArticle>> GetLatestNews()
+        public static Task<List<NewsArticle>> GetLatestNews()
         {
             var articles = new List<NewsArticle>
             {
