@@ -3,8 +3,120 @@
 
 <PageTitle>Dashboard</PageTitle>
 
-<h1>Dashboard Placeholder</h1>
+<div class="container-fluid">
+    <div class="row g-4 mt-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm rounded-3 p-3">
+                <h2 class="h5 text-muted mb-2">Portfolio Value</h2>
+                <p class="fs-2 fw-bold text-primary mb-0">@TotalValue.ToString("C")</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm rounded-3 p-3">
+                <h2 class="h5 text-muted mb-2">Change (24hrs)</h2>
+                <p class="fs-2 fw-bold @(FlatChange >= 0 ? "text-success" : "text-danger") mb-0">
+                    @(FlatChange >= 0 ? "+" : "")@FlatChange.ToString("C")
+                    <span class="fs-6 fw-normal">(@(PercentageChange >= 0 ? "+" : "")@PercentageChange.ToString("P"))</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <hr class="my-5" />
+
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card shadow-sm rounded-3 p-4">
+                <h2 class="h4 text-muted mb-4">Holdings Breakdown</h2>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Ticker</th>
+                                <th>Quantity</th>
+                                <th>Avg. Price</th>
+                                <th>Current Price</th>
+                                <th>Daily Change</th>
+                                <th>Portfolio Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var holding in Holdings)
+                            {
+                                <tr>
+                                    <td>@holding.Ticker</td>
+                                    <td>@holding.Name</td>
+                                    <td>@holding.Quantity</td>
+                                    <td>@holding.AveragePrice.ToString("C")</td>
+                                    <td>@holding.CurrentPrice.ToString("C")</td>
+                                    <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
+                                        @(holding.DailyChange >= 0 ? "+" : "")@holding.DailyChange.ToString("P")
+                                    </td>
+                                    <td>@((holding.PortfolioWeight * 100).ToString("N2"))%</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
+    public class Holding
+    {
+        public string Ticker { get; set; }
+        public string Name { get; set; }
+        public int Quantity { get; set; }
+        public decimal AveragePrice { get; set; }
+        public decimal CurrentPrice { get; set; }
+        public decimal PriceChange { get; set; }
+        public decimal DailyChange => PriceChange / (CurrentPrice - PriceChange);
+        public decimal PortfolioWeight { get; set; }
+    }
 
+    private List<Holding> Holdings = new();
+    private decimal FlatChange => Holdings.Sum(h => h.PriceChange * h.Quantity);
+    private decimal TotalValue => Holdings.Sum(h => h.CurrentPrice * h.Quantity);
+    private decimal PercentageChange => FlatChange / (TotalValue - FlatChange);
+
+    protected override void OnInitialized()
+    {
+        // Placeholder data waiting to connect to databse
+        Holdings.Add(new Holding
+        {
+            Ticker = "AAPL",
+            Name = "Apple Inc.",
+            Quantity = 50,
+            AveragePrice = 125.00m,
+            CurrentPrice = 150.00m,
+            PriceChange = 1.50m
+        });
+        Holdings.Add(new Holding
+        {
+            Ticker = "MSFT",
+            Name = "Microsoft Corp.",
+            Quantity = 25,
+            AveragePrice = 300.00m,
+            CurrentPrice = 400.00m,
+            PriceChange = 10.00m
+        });
+        Holdings.Add(new Holding
+        {
+            Ticker = "GOOGL",
+            Name = "Alphabet Inc.",
+            Quantity = 10,
+            AveragePrice = 1200.00m,
+            CurrentPrice = 1000.00m,
+            PriceChange = -5.00m
+        });
+
+        var totalStockValue = Holdings.Sum(h => h.CurrentPrice * h.Quantity);
+        foreach (var holding in Holdings)
+        {
+            holding.PortfolioWeight = (holding.CurrentPrice * holding.Quantity) / totalStockValue;
+        }
+    }
 }
