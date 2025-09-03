@@ -1,13 +1,394 @@
 ﻿@page "/"
 @layout Layout.EmptyLayout
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Home - TradingApp</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Welcome to TradingApp</h1>
+            <p class="hero-subtitle">Your gateway to professional trading and investment opportunities</p>
+            <div class="hero-buttons">
+                <a href="/login" class="btn btn-primary btn-lg">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Get Started
+                </a>
+                <a href="/register" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-person-plus"></i>
+                    Create Account
+                </a>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-graph-up text-success"></i>
+                </div>
+                <div class="stat-number">$2.4T</div>
+                <div class="stat-label">Daily Volume</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-people text-info"></i>
+                </div>
+                <div class="stat-number">500K+</div>
+                <div class="stat-label">Active Traders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-globe text-warning"></i>
+                </div>
+                <div class="stat-number">150+</div>
+                <div class="stat-label">Countries</div>
+            </div>
+        </div>
+    </div>
 
-Welcome to your new app.
+    <!-- Features Section -->
+    <div class="features-section">
+        <div class="container">
+            <h2 class="section-title">Why Choose TradingApp?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check text-success"></i>
+                    </div>
+                    <h3>Bank-Level Security</h3>
+                    <p>Your funds and data are protected with enterprise-grade security measures.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-lightning text-warning"></i>
+                    </div>
+                    <h3>Real-Time Data</h3>
+                    <p>Access live market data, charts, and analytics to make informed decisions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-phone text-primary"></i>
+                    </div>
+                    <h3>Mobile Trading</h3>
+                    <p>Trade anywhere, anytime with our responsive mobile trading application.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-headset text-info"></i>
+                    </div>
+                    <h3>24/7 Support</h3>
+                    <p>Our expert team is available around the clock to assist you.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<a href="dashboard">Dashboard</a>
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <div class="container">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="/dashboard" class="action-card">
+                    <div class="action-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h3>Dashboard</h3>
+                    <p>View your portfolio and trading performance</p>
+                </a>
+                <a href="/stocks" class="action-card">
+                    <div class="action-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3>Stocks</h3>
+                    <p>Browse and analyze stock opportunities</p>
+                </a>
+                <a href="/login" class="action-card">
+                    <div class="action-icon">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </div>
+                    <h3>Login</h3>
+                    <p>Access your trading account</p>
+                </a>
+                <a href="/register" class="action-card">
+                    <div class="action-icon">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <h3>Register</h3>
+                    <p>Create your trading account</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.home-container {
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto 3rem;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hero-subtitle {
+    font-size: 1.3rem;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background: #4ade80;
+    color: #064e3b;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #22c55e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(74, 222, 128, 0.3);
+}
+
+.btn-outline-light {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.btn-outline-light:hover {
+    background: white;
+    color: #667eea;
+    transform: translateY(-2px);
+}
+
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    text-align: center;
+    min-width: 120px;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.features-section {
+    padding: 4rem 2rem;
+    background: #f8fafc;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 3rem;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+.feature-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 1rem;
+}
+
+.feature-card p {
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.quick-actions {
+    padding: 4rem 2rem;
+    background: white;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.action-card {
+    background: #f8fafc;
+    padding: 2rem;
+    border-radius: 1rem;
+    text-decoration: none;
+    color: inherit;
+    text-align: center;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.action-card:hover {
+    background: white;
+    border-color: #667eea;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+}
+
+.action-icon {
+    font-size: 2.5rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.action-card h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 0.5rem;
+}
+
+.action-card p {
+    color: #4a5568;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+@@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .hero-stats {
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        min-width: 100px;
+        padding: 1rem;
+    }
+    
+    .features-section,
+    .quick-actions {
+        padding: 2rem 1rem;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+    }
+    
+    .features-grid,
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 
 @code {
 

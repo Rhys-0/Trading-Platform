@@ -1,0 +1,398 @@
+@page "/identity-verification"
+@layout Layout.EmptyLayout
+
+<PageTitle>Identity Verification - TradingApp</PageTitle>
+
+<div class="verification-container">
+    <div class="header-section">
+        <div class="header-content">
+            <h1>Identity Verification</h1>
+            <p>Complete your profile setup</p>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 66%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="security-banner">
+        <i class="bi bi-shield-check"></i>
+        <span>Your information is securely stored</span>
+    </div>
+
+    <div class="form-section">
+        <EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            
+            <div class="section-group">
+                <h3>Document Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="documentType">Document Type</label>
+                        <InputSelect id="documentType" class="form-control" @bind-Value="_model.DocumentType">
+                            <option value="">Select document type</option>
+                            <option value="Passport">Passport</option>
+                            <option value="Driver's License">Driver's License</option>
+                            <option value="National ID">National ID</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => _model.DocumentType)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="documentNumber">Document Number</label>
+                        <InputText id="documentNumber" class="form-control" placeholder="Enter document number" @bind-Value="_model.DocumentNumber" />
+                        <ValidationMessage For="@(() => _model.DocumentNumber)" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expiryDate">Expiry Date</label>
+                        <InputText id="expiryDate" class="form-control" placeholder="MM/YYYY" @bind-Value="_model.ExpiryDate" />
+                        <ValidationMessage For="@(() => _model.ExpiryDate)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="issuingCountry">Issuing Country</label>
+                        <InputText id="issuingCountry" class="form-control" placeholder="Enter issuing country" @bind-Value="_model.IssuingCountry" />
+                        <ValidationMessage For="@(() => _model.IssuingCountry)" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <h3>Additional Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number</label>
+                        <InputText id="phoneNumber" class="form-control" placeholder="Enter phone number" @bind-Value="_model.PhoneNumber" />
+                        <ValidationMessage For="@(() => _model.PhoneNumber)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="emergencyContact">Emergency Contact</label>
+                        <InputText id="emergencyContact" class="form-control" placeholder="Enter emergency contact" @bind-Value="_model.EmergencyContact" />
+                        <ValidationMessage For="@(() => _model.EmergencyContact)" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <h3>Document Upload (Placeholder)</h3>
+                <div class="upload-placeholder">
+                    <i class="bi bi-file-earmark-person upload-icon"></i>
+                    <p>Document upload functionality will be implemented later</p>
+                    <small>For now, you can proceed with basic verification</small>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <h3>Proof of Address (Placeholder)</h3>
+                <div class="upload-placeholder">
+                    <i class="bi bi-house upload-icon"></i>
+                    <p>Address verification will be implemented later</p>
+                    <small>You can proceed with account creation</small>
+                </div>
+            </div>
+
+            <div class="tips-section">
+                <div class="tips-header">
+                    <i class="bi bi-info-circle"></i>
+                    <h4>Profile Information:</h4>
+                </div>
+                <ul>
+                    <li>This information will be displayed on your dashboard</li>
+                    <li>You can update these details later in your profile settings</li>
+                    <li>Document verification will be completed in a future update</li>
+                    <li>Your account will be fully functional once you complete this step</li>
+                </ul>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage)) {
+                <div class="alert alert-danger" role="alert">@_errorMessage</div>
+            }
+
+            <button class="btn btn-primary submit-btn" type="submit" disabled="@_isSubmitting">
+                Complete Profile Setup
+                <i class="bi bi-check"></i>
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+<style>
+.verification-container {
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f8fafc;
+}
+
+.header-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.header-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.header-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #4ade80;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.security-banner {
+    background: #dcfce7;
+    color: #166534;
+    padding: 1rem 2rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.form-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.section-group {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-group h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-group {
+    flex: 1;
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #374151;
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.upload-placeholder {
+    background: #f8fafc;
+    border: 2px dashed #d1d5db;
+    border-radius: 0.75rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    color: #6b7280;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.upload-placeholder p {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.upload-placeholder small {
+    color: #6b7280;
+}
+
+.tips-section {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.tips-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tips-header i {
+    color: #3b82f6;
+    font-size: 1.2rem;
+}
+
+.tips-header h4 {
+    color: #1e40af;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.tips-section ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #1e40af;
+}
+
+.tips-section li {
+    margin-bottom: 0.5rem;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 0.75rem;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-danger {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+@@media (max-width: 768px) {
+    .header-content h1 {
+        font-size: 2rem;
+    }
+    
+    .header-content p {
+        font-size: 1rem;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .form-section {
+        padding: 2rem 1rem;
+    }
+    
+    .header-section {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-placeholder {
+        padding: 2rem 1rem;
+    }
+}
+</style>
+
+@code {
+    private IdentityVerificationModel _model = new();
+    private bool _isSubmitting = false;
+    private string? _errorMessage;
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private async Task HandleValidSubmit() {
+        _errorMessage = null;
+        _isSubmitting = true;
+        
+        try {
+            // For now, we'll just navigate to the next step
+            // In the future, this would validate and store the verification data
+            await Task.Delay(500);
+            Nav.NavigateTo("/account-success");
+        } catch (Exception) {
+            _errorMessage = "An error occurred. Please try again.";
+        } finally {
+            _isSubmitting = false;
+        }
+    }
+
+    private sealed class IdentityVerificationModel {
+        [Required]
+        public string DocumentType { get; set; } = string.Empty;
+
+        [Required]
+        public string DocumentNumber { get; set; } = string.Empty;
+
+        [Required]
+        public string ExpiryDate { get; set; } = string.Empty;
+
+        [Required]
+        public string IssuingCountry { get; set; } = string.Empty;
+
+        [Required]
+        public string PhoneNumber { get; set; } = string.Empty;
+
+        [Required]
+        public string EmergencyContact { get; set; } = string.Empty;
+    }
+}
