@@ -1,14 +1,12 @@
-/* Layout */
 .stocks-grid {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 340px 1fr;
     gap: 1rem;
     align-items: start;
 }
 
-/* Left list */
 .stocks-list {
-    padding: 0.25rem 0.25rem 0.5rem;
+    padding: 0.25rem 0.25rem 0.75rem;
 }
 
 .stocks-search {
@@ -17,40 +15,84 @@
     margin-bottom: 0.6rem;
     border: 1px solid #dcdcdc;
     border-radius: 6px;
-    outline: none;
 }
 
-/* Remove bullets + default ul spacing */
 .symbols {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-    /* Make list items look clean, no heavy borders */
     .symbols li {
-        margin-bottom: 0.35rem;
+        margin-bottom: 0.5rem;
     }
 
-.symbol-btn {
-    width: 100%;
-    text-align: left;
-    padding: 0.45rem 0.55rem;
-    background: transparent;
-    border: 0; /* <-- removes the boxy border */
-    border-radius: 6px;
+.symbol-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    border: 1px solid #e6e6e6;
+    background: #fff;
+    border-radius: 10px;
+    padding: .6rem .75rem;
     cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
-    .symbol-btn:hover {
-        background: #f5f7fb;
+    .symbol-card:hover {
+        background: #f8fafc;
+        border-color: #dfe7f3;
     }
 
-    .symbol-btn.active {
-        background: #e8f0ff;
+    .symbol-card.active {
+        background: #eef4ff;
+        border-color: #c7d7ff;
     }
 
-/* Right side: a soft card around the TradingView widget (like your screenshot) */
+.info .sym {
+    font-weight: 600;
+    margin-bottom: .1rem;
+}
+
+.info .row {
+    display: flex;
+    gap: .6rem;
+    align-items: baseline;
+}
+
+.price, .chg {
+    font-variant-numeric: tabular-nums;
+}
+
+    .chg.up {
+        color: #0a7a0a;
+    }
+    .chg.down {
+        color: #b00020;
+    }
+
+.text-btn {
+    background: transparent;
+    border: 0;
+    padding: .25rem .35rem;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+    .text-btn:hover {
+        background: rgba(0,0,0,.04);
+    }
+
+    .text-btn.buy {
+        color: #0a7a0a;
+    }
+
+    .text-btn.sell {
+        color: #b00020;
+    }
+
 .stocks-view {
     border: 1px solid #e6e6e6;
     border-radius: 10px;

@@ -1,44 +1,40 @@
 @using Microsoft.JSInterop
+@namespace TradingApp.Components
 @inject IJSRuntime JS
 
 <div class="tradingview-widget-container stock-container">
   <div id="@_containerId" class="tradingview-widget-container__widget"></div>
   <div class="tradingview-widget-copyright">
     <a href="https://www.tradingview.com/symbols/@(Symbol?.Replace(":", "-"))/" rel="noopener nofollow" target="_blank">
-      <span class="blue-text">@Symbol quotes by TradingView</span>
+      <span class="blue-text">@($"{Symbol} quotes by TradingView")</span>
     </a>
   </div>
 </div>
 
 @code {
-    [Parameter] public string Symbol { get; set; } = "NASDAQ:TSLA";
-    [Parameter] public int Width { get; set; } = 420;
-    [Parameter] public string ColorTheme { get; set; } = "light";
+  [Parameter] public string Symbol { get; set; } = "NASDAQ:TSLA";
+  [Parameter] public int Width { get; set; } = 420;
+  [Parameter] public string ColorTheme { get; set; } = "light";
 
-    private string _containerId = $"tv_{Guid.NewGuid():N}";
-    private bool _initialized;
+  private string _containerId = $"tv_{Guid.NewGuid():N}";
+  private bool _initialized;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender) { _initialized = true; await Render(); }
+  }
+
+  protected override async Task OnParametersSetAsync()
+  {
+    if (_initialized) await Render();
+  }
+
+  private ValueTask Render() =>
+    JS.InvokeVoidAsync("tradingView.loadSingleQuote", _containerId, Symbol, new
     {
-        if (firstRender)
-        {
-            _initialized = true;
-            await Render();
-        }
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (_initialized)
-            await Render();
-    }
-
-    private ValueTask Render() =>
-        JS.InvokeVoidAsync("tradingView.loadSingleQuote", _containerId, Symbol, new
-        {
-            colorTheme = ColorTheme,
-            isTransparent = false,
-            locale = "en",
-            width = Width
-        });
+      colorTheme = ColorTheme,
+      isTransparent = false,
+      locale = "en",
+      width = Width
+    });
 }

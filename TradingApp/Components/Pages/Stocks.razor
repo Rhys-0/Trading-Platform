@@ -1,44 +1,5 @@
 ﻿@page "/stocks"
-
-<PageTitle>Stocks</PageTitle>
+@using TradingApp.Components
 
 <h3 class="mb-3">Stocks</h3>
 <StocksPanel />
-
-<div class="stocks-grid">
-    <aside class="stocks-list">
-        <input class="stocks-search" @bind="search" placeholder="Search symbol…" />
-        <ul>
-            @foreach (var s in FilteredSymbols)
-            {
-                <li>
-                    <button class="symbol-btn @(s == Selected ? "active" : null)" @onclick="() => Select(s)">
-                        @s
-                    </button>
-                </li>
-            }
-        </ul>
-    </aside>
-
-    <section>
-        <StockQuote Symbol="@Selected" Width="420" ColorTheme="light" />
-    </section>
-</div>
-
-@code {
-    private string Selected = "NASDAQ:TSLA";
-    private string search = "";
-
-    private readonly string[] Symbols = new[]
-    {
-        "NASDAQ:TSLA", "NASDAQ:AAPL", "NASDAQ:MSFT", "NASDAQ:NVDA",
-        "NASDAQ:AMZN", "NYSE:SPY", "NYSE:KO", "NYSE:DIS"
-    };
-
-    private IEnumerable<string> FilteredSymbols =>
-        string.IsNullOrWhiteSpace(search)
-            ? Symbols
-            : Symbols.Where(s => s.Contains(search, StringComparison.OrdinalIgnoreCase));
-
-    private void Select(string s) => Selected = s;
-}
