@@ -13,6 +13,8 @@ builder.Services.AddSingleton<DatabaseConnection>();
 // Database manager methods
 builder.Services.AddScoped<ILoginManager, LoginManager>();
 
+builder.Services.AddSingleton<NewsService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
