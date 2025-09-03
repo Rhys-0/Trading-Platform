@@ -1,15 +1,31 @@
-@using Microsoft.JSInterop
+@namespace TradingApp.Components
 
 <div class="stocks-grid">
   <aside class="stocks-list">
     <input class="stocks-search" @bind="search" placeholder="Search symbol..." />
+
     <ul class="symbols">
       @foreach (var s in FilteredSymbols)
       {
+        var q = Quotes[s];
         <li>
-          <button class="symbol-btn @(s == Selected ? "active" : null)" @onclick="() => Select(s)">
-            @s
-          </button>
+          <div class="symbol-card @(s == Selected ? "active" : null)" @onclick="() => Select(s)">
+            <div class="info">
+              <div class="sym">@s</div>
+              <div class="row">
+                <span class="price">@q.Price:F2</span>
+                <span class="chg @(q.IsUp ? "up" : "down")">
+                  @(q.IsUp ? "+" : "-")@Math.Abs(q.Change):F2
+                  (<span>@Math.Abs(q.ChangePercent):F2</span>%)
+                </span>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="button" class="text-btn buy"  @onclick:stopPropagation="true">Buy</button>
+              <button type="button" class="text-btn sell" @onclick:stopPropagation="true">Sell</button>
+            </div>
+          </div>
         </li>
       }
     </ul>
@@ -24,6 +40,7 @@
   private string Selected = "NASDAQ:TSLA";
   private string search = "";
 
+  // Seed list (Will swap later)
   private readonly string[] Symbols =
   {
     "NASDAQ:TSLA","NASDAQ:AAPL","NASDAQ:MSFT","NASDAQ:NVDA",
@@ -34,6 +51,71 @@
       string.IsNullOrWhiteSpace(search)
         ? Symbols
         : Symbols.Where(s => s.Contains(search, StringComparison.OrdinalIgnoreCase));
+
+  //Quote model + mock ticker (works without API key)
+  private sealed class Quote
+  {
+    public decimal Price { get; set; }
+    public decimal PrevPrice { get; set; }
+    public decimal Change => Price - PrevPrice;
+    public decimal ChangePercent => PrevPrice == 0 ? 0 : (Change / PrevPrice) * 100m;
+    public bool IsUp => Change >= 0;
+  }
+
+  private readonly Dictionary<string, Quote> Quotes = new();
+  private System.Threading.PeriodicTimer? _timer;
+  private readonly CancellationTokenSource _cts = new();
+
+  protected override async Task OnInitializedAsync()
+  {
+    var rnd = new Random();
+
+    foreach (var s in Symbols)
+    {
+      var basePrice = s switch
+      {
+        var x when x.Contains("TSLA") => 250m,
+        var x when x.Contains("NVDA") => 900m,
+        var x when x.Contains("AMZN") => 180m,
+        var x when x.Contains("AAPL") => 180m,
+        var x when x.Contains("MSFT") => 420m,
+        var x when x.Contains("SPY")  => 510m,
+        var x when x.Contains("KO")   => 60m,
+        var x when x.Contains("DIS")  => 110m,
+        _ => 100m
+      };
+
+      Quotes[s] = new Quote { Price = basePrice, PrevPrice = basePrice };
+    }
+
+    //Lightweight mock “ticker” that nudges prices
+    _timer = new System.Threading.PeriodicTimer(TimeSpan.FromSeconds(6));
+    _ = Task.Run(async () =>
+    {
+      while (await _timer.WaitForNextTickAsync(_cts.Token))
+      {
+        foreach (var kvp in Quotes.ToList())
+        {
+          var q = kvp.Value;
+          q.PrevPrice = q.Price;
+
+          // Random walk: +/- up to ~1% each tick
+          var deltaPct = (decimal)(rnd.NextDouble() - 0.5) * 0.02m;
+          var next = q.Price * (1m + deltaPct);
+
+          q.Price = Math.Max(1m, decimal.Round(next, 2));
+        }
+
+        await InvokeAsync(StateHasChanged);
+      }
+    });
+  }
+
+  public void Dispose()
+  {
+    _cts.Cancel();
+    _timer?.Dispose();
+  }
 
   private void Select(string s) => Selected = s;
 }
