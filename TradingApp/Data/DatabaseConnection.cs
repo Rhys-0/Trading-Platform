@@ -3,9 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Npgsql;
 using System;
 using System.Data;
+using TradingApp.Data.Interfaces;
 
 namespace TradingApp.Data {
-    internal class DatabaseConnection {
+    internal class DatabaseConnection : IDatabaseConnection {
         private readonly string _connectionString;
         private readonly ILogger<DatabaseConnection>? _logger;
 
