@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Connections;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using System;
 using System.Data;
@@ -19,11 +20,11 @@ namespace TradingApp.Data {
             try {
                 var connection = new NpgsqlConnection(_connectionString);
                 await connection.OpenAsync();
-                _logger?.LogDebug("Database connection opened successfully");
+                _logger?.LogInformation("Database connection opened successfully");
                 return connection;
             } catch (Exception ex) {
-                _logger?.LogCritical("Failed to open database connection: {Ex}", ex);
-                throw;
+                _logger?.LogCritical(ex, "Failed to open database connection: {Ex}", ex);
+                throw new ConnectionAbortedException("Failed to open database connection");
             }
         }
     }
