@@ -8,12 +8,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Singletons
 builder.Services.AddSingleton<DatabaseConnection>();
-
-// Database manager methods
-builder.Services.AddScoped<ILoginManager, LoginManager>();
-
 builder.Services.AddSingleton<NewsService>();
+
+// Scoped classes
+builder.Services.AddScoped<ILoginManager, LoginManager>();
 
 // Register HttpClient for Stock News API calls
 builder.Services.AddHttpClient<NewsService>();

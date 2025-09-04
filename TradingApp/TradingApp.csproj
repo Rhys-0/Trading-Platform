@@ -19,9 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
+	<InternalsVisibleTo Include="TradingApp.Tests" />
     <Folder Include="docs\" />
-    <Folder Include="Tests\Data\" />
-    <Folder Include="Tests\Models\" />
   </ItemGroup>
 
 </Project>
