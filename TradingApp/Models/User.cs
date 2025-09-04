@@ -1,7 +1,7 @@
 ﻿using TradingApp.Models.Interfaces;
 
 namespace TradingApp.Models {
-    internal class User : IUser {
+    internal sealed class User : IUser {
         public int Id { get; }
         public string Username { get; } // No set needed unless users being able to change their username is implemented
         public string Email { get; } // No set needed unless users being able to change their emails is implemented
@@ -27,6 +27,7 @@ namespace TradingApp.Models {
         }
 
         public void LoadPortfolio() {
+            Portfolio = null;
             throw new NotImplementedException();
         }
     }

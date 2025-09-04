@@ -1,7 +1,7 @@
 ﻿using TradingApp.Models.Interfaces;
 
 namespace TradingApp.Models {
-    internal class Position : IPosition {
+    internal sealed class Position : IPosition {
         public int PositionId { get; }
         public string StockSymbol { get; }
         public int TotalQuantity { get; set; }
