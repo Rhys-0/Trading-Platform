@@ -1,8 +1,473 @@
 ﻿@page "/register"
 @layout Layout.EmptyLayout
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Register - TradingApp</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="login-container">
+    <!-- Left Panel - Branding & Features -->
+    <div class="left-panel">
+        <div class="brand-section">
+            <div class="brand-icon">
+                <i class="bi bi-graph-up"></i>
+            </div>
+            <h1 class="brand-title">TradingApp</h1>
+            <p class="brand-tagline">Professional Trading Platform for Modern Investors</p>
+        </div>
+        
+        <div class="features-section">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-shield-check text-success"></i>
+                </div>
+                <span>Bank-level security</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-lightning text-warning"></i>
+                </div>
+                <span>Real-time market data</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-phone text-success"></i>
+                </div>
+                <span>Mobile trading app</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="bi bi-headset text-success"></i>
+                </div>
+                <span>24/7 customer support</span>
+            </div>
+        </div>
+        
+        <div class="stats-section">
+            <div class="stat-item">
+                <div class="stat-value text-success">$2.4T</div>
+                <div class="stat-label">Daily Volume</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value text-success">500K+</div>
+                <div class="stat-label">Active Traders</div>
+            </div>
+        </div>
+    </div>
 
-Welcome to your new app.
+    <!-- Right Panel - Registration Form -->
+    <div class="right-panel">
+        <div class="form-container">
+            <div class="form-header">
+                <h2>Create Account</h2>
+                <p>Join thousands of successful traders</p>
+            </div>
+
+            <EditForm Model="_model" OnValidSubmit="HandleValidSubmit" class="login-form">
+                <DataAnnotationsValidator />
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName" class="form-label">First Name</label>
+                        <InputText id="firstName" class="form-control" placeholder="Enter your first name" @bind-Value="_model.FirstName" />
+                        <ValidationMessage For="@(() => _model.FirstName)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <InputText id="lastName" class="form-control" placeholder="Enter your last name" @bind-Value="_model.LastName" />
+                        <ValidationMessage For="@(() => _model.LastName)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <InputText id="username" class="form-control" placeholder="Choose a username" @bind-Value="_model.Username" />
+                    <ValidationMessage For="@(() => _model.Username)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <InputText id="email" class="form-control" placeholder="Enter your email" @bind-Value="_model.Email" />
+                    <ValidationMessage For="@(() => _model.Email)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <InputText id="password" type="password" class="form-control" placeholder="Create a password" @bind-Value="_model.Password" />
+                    <ValidationMessage For="@(() => _model.Password)" />
+                </div>
+
+                <div class="form-options">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="termsAccepted">
+                        <label class="form-check-label" for="termsAccepted">
+                            I agree to the <a href="#" class="terms-link">Terms & Conditions</a>
+                        </label>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_errorMessage)) {
+                    <div class="alert alert-danger" role="alert">@_errorMessage</div>
+                }
+                @if (!string.IsNullOrEmpty(_successMessage)) {
+                    <div class="alert alert-success" role="alert">@_successMessage</div>
+                }
+
+                <button class="btn btn-primary signin-btn" type="submit" disabled="@_isSubmitting">
+                    <i class="bi bi-person-plus"></i>
+                    Create Account
+                </button>
+            </EditForm>
+
+            <div class="divider">
+                <span>or continue with</span>
+            </div>
+
+            <div class="social-login">
+                <button class="btn btn-outline-secondary social-btn">
+                    <i class="bi bi-google"></i>
+                </button>
+                <button class="btn btn-outline-secondary social-btn">
+                    <i class="bi bi-facebook"></i>
+                </button>
+                <button class="btn btn-outline-secondary social-btn">
+                    <i class="bi bi-apple"></i>
+                </button>
+            </div>
+
+            <div class="signup-link">
+                <span>Already have an account?</span>
+                <a href="/login">Sign in here</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-container {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.left-panel {
+    flex: 0 0 40%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.brand-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.brand-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.brand-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.brand-tagline {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.features-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1rem;
+}
+
+.feature-icon {
+    font-size: 1.2rem;
+    width: 2rem;
+    text-align: center;
+}
+
+.stats-section {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.right-panel {
+    flex: 0 0 60%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.form-header p {
+    color: #718096;
+    font-size: 1rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-options {
+    margin-bottom: 1.5rem;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-check-label {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.terms-link {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.terms-link:hover {
+    text-decoration: underline;
+}
+
+.signin-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: transform 0.2s;
+}
+
+.signin-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.divider {
+    text-align: center;
+    margin: 2rem 0;
+    position: relative;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.divider span {
+    background: white;
+    padding: 0 1rem;
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.social-login {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.social-btn {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.social-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-1px);
+}
+
+.signup-link {
+    text-align: center;
+    color: #718096;
+}
+
+.signup-link a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.signup-link a:hover {
+    text-decoration: underline;
+}
+
+@@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+    
+    .left-panel, .right-panel {
+        flex: none;
+    }
+    
+    .left-panel {
+        padding: 2rem 1rem;
+    }
+    
+    .stats-section {
+        margin-top: 1rem;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .form-row .form-group {
+        margin-bottom: 1.5rem;
+    }
+}
+</style>
+
+@code {
+	private RegisterModel _model = new();
+	private bool _isSubmitting = false;
+	private string? _errorMessage;
+	private string? _successMessage;
+
+	[Inject] private TradingApp.Data.Interfaces.ILoginManager LoginManager { get; set; } = default!;
+	[Inject] private NavigationManager Nav { get; set; } = default!;
+
+	private async Task HandleValidSubmit() {
+		_errorMessage = null;
+		_successMessage = null;
+		_isSubmitting = true;
+		try {
+			string passwordHash = TradingApp.Data.PasswordHasher.ComputeSha256Hash(_model.Password);
+			bool added = await LoginManager.AddUser(_model.Username, _model.Email, passwordHash, _model.FirstName, _model.LastName);
+			if (!added) {
+				_errorMessage = "Registration failed. Please try again.";
+				return;
+			}
+			_successMessage = "Registration successful! Redirecting to profile setup...";
+			await Task.Delay(1500);
+			Nav.NavigateTo("/personal-info");
+		} catch (Exception) {
+			_errorMessage = "An unexpected error occurred. Please try again.";
+		} finally {
+			_isSubmitting = false;
+		}
+	}
+
+	private sealed class RegisterModel {
+		[Required]
+		public string FirstName { get; set; } = string.Empty;
+
+		[Required]
+		public string LastName { get; set; } = string.Empty;
+
+		[Required]
+		public string Username { get; set; } = string.Empty;
+
+		[Required, EmailAddress]
+		public string Email { get; set; } = string.Empty;
+
+		[Required]
+		[MinLength(6)]
+		public string Password { get; set; } = string.Empty;
+	}
+}

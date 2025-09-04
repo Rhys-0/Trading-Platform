@@ -1,0 +1,335 @@
+@page "/account-success"
+@layout Layout.EmptyLayout
+
+<PageTitle>Account Created Successfully - TradingApp</PageTitle>
+
+<div class="success-container">
+    <!-- Success Banner -->
+    <div class="success-banner">
+        <div class="success-icon">
+            <i class="bi bi-check-circle"></i>
+        </div>
+        <h1>Account Created Successfully!</h1>
+        <p>Welcome to TradingApp Trading Platform</p>
+    </div>
+
+    <!-- Account Status and Details -->
+    <div class="content-section">
+        <div class="status-grid">
+            <!-- Account Status Card -->
+            <div class="status-card">
+                <h3>Account Status</h3>
+                <div class="status-item">
+                    <span class="status-label">Account Status</span>
+                    <span class="status-value success">
+                        <i class="bi bi-check-circle"></i>
+                        Active
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Identity Verification</span>
+                    <span class="status-value success">Verified</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Document Review</span>
+                    <span class="status-value success">Approved</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Trading Access</span>
+                    <span class="status-value success">
+                        <i class="bi bi-graph-up"></i>
+                        Enabled
+                    </span>
+                </div>
+            </div>
+
+            <!-- Account Details Card -->
+            <div class="details-card">
+                <h3>Your Account Details</h3>
+                <div class="detail-item">
+                    <span class="detail-label">Account ID</span>
+                    <span class="detail-value">#TA2024001</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Account Type</span>
+                    <span class="detail-value">Standard Trading</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Base Currency</span>
+                    <span class="detail-value">USD</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Created Date</span>
+                    <span class="detail-value">@DateTime.Now.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ready to Start Trading -->
+        <div class="trading-card">
+            <div class="trading-header">
+                <i class="bi bi-rocket"></i>
+                <h3>Ready to Start Trading?</h3>
+            </div>
+            <p>Your account is fully verified and ready for trading. You can now access all platform features including real-time market data and advanced charting tools.</p>
+        </div>
+
+        <!-- Access Your Account -->
+        <div class="access-section">
+            <div class="access-header">
+                <i class="bi bi-arrow-right"></i>
+                <h2>→ Access Your Account</h2>
+            </div>
+            <p>Click below to login and start your trading journey</p>
+            <a href="/login" class="btn btn-primary login-btn">
+                <i class="bi bi-arrow-right"></i>
+                → Login Now
+            </a>
+            <div class="support-info">
+                <span>Need help? Contact support at </span>
+                <a href="mailto:support@tradingapp.com">support@tradingapp.com</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.success-container {
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f8fafc;
+}
+
+.success-banner {
+    background: #16a34a;
+    color: white;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.success-icon {
+    margin-bottom: 1.5rem;
+}
+
+.success-icon i {
+    font-size: 5rem;
+    color: white;
+}
+
+.success-banner h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.success-banner p {
+    font-size: 1.3rem;
+    opacity: 0.9;
+}
+
+.content-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.status-card, .details-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.status-card {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.status-card h3, .details-card h3 {
+    color: #2d3748;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.status-item, .detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.status-item:last-child, .detail-item:last-child {
+    border-bottom: none;
+}
+
+.status-label, .detail-label {
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.status-value, .detail-value {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-value.success {
+    color: #16a34a;
+}
+
+.detail-value {
+    color: #3b82f6;
+}
+
+.trading-card {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.trading-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.trading-header i {
+    font-size: 1.5rem;
+    color: #3b82f6;
+}
+
+.trading-header h3 {
+    color: #1e40af;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.trading-card p {
+    color: #1e40af;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.access-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 1rem;
+    text-align: center;
+}
+
+.access-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.access-header i {
+    font-size: 2rem;
+}
+
+.access-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.access-section p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+}
+
+.login-btn {
+    background: #3b82f6;
+    border: none;
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 2rem;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    background: #2563eb;
+}
+
+.support-info {
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
+.support-info a {
+    color: white;
+    text-decoration: underline;
+}
+
+.support-info a:hover {
+    opacity: 1;
+}
+
+@@media (max-width: 768px) {
+    .success-banner h1 {
+        font-size: 2rem;
+    }
+    
+    .success-banner p {
+        font-size: 1.1rem;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .content-section {
+        padding: 2rem 1rem;
+    }
+    
+    .success-banner {
+        padding: 3rem 1rem;
+    }
+    
+    .access-section {
+        padding: 2rem 1rem;
+    }
+    
+    .access-header h2 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+
+@code {
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    protected override void OnInitialized() {
+        // You could load account details from a service here
+        // For now, we'll use placeholder data
+    }
+}
