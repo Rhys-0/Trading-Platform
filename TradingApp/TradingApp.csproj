@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <Folder Include="docs\" />
+    <Folder Include="Tests\Data\" />
+    <Folder Include="Tests\Models\" />
   </ItemGroup>
 
 </Project>

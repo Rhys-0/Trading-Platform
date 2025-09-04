@@ -1,7 +1,7 @@
 ﻿using TradingApp.Models.Interfaces;
 
 namespace TradingApp.Models {
-    internal class Portfolio : IPortfolio {
+    internal sealed class Portfolio : IPortfolio {
         public int PortfolioId { get; }
         public decimal Value { get; set; }
         public decimal NetProfit { get; set; }
