@@ -56,9 +56,10 @@ steps:
     arguments: >
       --configuration $(buildConfiguration)
       --no-build
+      --logger trx
       --collect:"XPlat Code Coverage"
       --results-directory $(Agent.TempDirectory)
-    publishTestResults: true
+      
 
 - task: SonarCloudAnalyze@3
   displayName: 'Run SonarCloud analysis'
