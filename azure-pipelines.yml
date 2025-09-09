@@ -9,7 +9,7 @@ variables:
   buildConfiguration: 'Release'
   dotnetVersion: '9.0.200'
   projectPath: 'TradingApp/TradingApp.csproj'
-  testProjects: '**/*Tests.csproj' 
+  testProjects: 'TradingApp.Tests/TradingApp.Tests.csproj' 
   publishDir: '$(Build.ArtifactStagingDirectory)/publish'
 
 steps:
@@ -35,18 +35,15 @@ steps:
   inputs:
     SonarCloud: 'SonarQube-Connection'
     organization: 'rhys-0'
-    scannerMode: 'dotnet'
+    scannerMode: 'MSBuild'
     projectKey: 'Rhys-0_Trading-Platform'
 
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
     command: 'build'
-    projects: '$(projectPath)'
+    projects: '**/*.sln'
     arguments: '--configuration $(buildConfiguration)'
-
-- task: SonarCloudAnalyze@3
-  displayName: 'Run SonarCloud analysis'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run Tests'
@@ -60,4 +57,7 @@ steps:
   inputs:
     testResultsFiles: '**/*.trx'
     testRunTitle: 'Unit Tests'
+
+- task: SonarCloudAnalyze@3
+  displayName: 'Run SonarCloud analysis'
 
