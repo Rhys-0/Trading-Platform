@@ -28,7 +28,7 @@ steps:
   displayName: 'Restore NuGet packages'
   inputs:
     command: 'restore'
-    projects: '$(projectPath)'
+    projects: '**/*.sln'
 
 # Prepare sonarcloud analysis
 - task: SonarCloudPrepare@3
@@ -39,7 +39,7 @@ steps:
     scannerMode: 'dotnet'
     projectKey: 'Rhys-0_Trading-Platform'
     extraProperties: |
-      sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/TestResults/coverage.opencover.xml
+      sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/TestResults/coverage.opencover.xml
       sonar.test.inclusions=**/TradingApp.Tests/**/*.cs
 
 - task: DotNetCoreCLI@2
@@ -57,16 +57,10 @@ steps:
     arguments: >
       --configuration $(buildConfiguration)
       --no-build
-      --logger trx
-      /p:CollectCoverage=true
-      /p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/coverage.opencover.xml
-      /p:CoverletOutputFormat=opencover
-
-- task: PublishTestResults@2
-  displayName: 'Publish Test Results'
-  inputs:
-    testResultsFiles: '**/*.trx'
-    testRunTitle: 'Unit Tests'
+      --results-directory $(Agent.TempDirectory)/TestResults
+      --collect:"XPlat Code Coverage"
+      --settings coverlet.runsettings
+    publishTestResults: true
 
 - task: SonarCloudAnalyze@3
   displayName: 'Run SonarCloud analysis'
