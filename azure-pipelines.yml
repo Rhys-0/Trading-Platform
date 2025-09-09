@@ -36,7 +36,7 @@ steps:
   inputs:
     SonarCloud: 'SonarQube-Connection'
     organization: 'rhys-0'
-    scannerMode: 'MSBuild'
+    scannerMode: 'dotnet'
     projectKey: 'Rhys-0_Trading-Platform'
 
 - task: DotNetCoreCLI@2
