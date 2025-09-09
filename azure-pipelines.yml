@@ -39,8 +39,8 @@ steps:
     scannerMode: 'dotnet'
     projectKey: 'Rhys-0_Trading-Platform'
     extraProperties: |
-      sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/TestResults/**/coverage.opencover.xml
-      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/TestResults/**/*.trx
+      sonar.cs.opencover.reportsPaths=**/*coverage*.xml
+      sonar.cs.vstest.reportsPaths=**/*.trx
       sonar.test.inclusions=**/TradingApp.Tests/**/*.cs
 
 - task: DotNetCoreCLI@2
@@ -62,6 +62,12 @@ steps:
       --settings coverlet.runsettings
     publishTestResults: true
 
+- task: PowerShell@2
+  displayName: 'Find Coverage Files'
+  inputs:
+    targetType: 'inline'
+    script: |
+      Get-ChildItem -Path "$(Agent.BuildDirectory)" -Recurse -Include "*coverage*" | ForEach-Object { Write-Host $_.FullName }
+
 - task: SonarCloudAnalyze@3
   displayName: 'Run SonarCloud analysis'
-
