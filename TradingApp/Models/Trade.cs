@@ -1,7 +1,7 @@
 ﻿using TradingApp.Models.Interfaces;
 
 namespace TradingApp.Models {
-    internal class Trade : ITrade {
+    internal sealed class Trade : ITrade {
         public int TradeId { get; }
         public string TradeType { get; }
         public string StockSymbol { get; }

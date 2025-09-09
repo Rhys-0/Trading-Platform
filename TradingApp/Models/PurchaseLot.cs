@@ -1,7 +1,7 @@
 ﻿using TradingApp.Models.Interfaces;
 
 namespace TradingApp.Models {
-    internal class PurchaseLot : IPurchaseLot {
+    internal sealed class PurchaseLot : IPurchaseLot {
         public int PurchaseLotId { get; }
 
         public int Quantity { get; set; }

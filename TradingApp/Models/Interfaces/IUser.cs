@@ -8,9 +8,11 @@
         decimal StartingCashBalance { get; }
         decimal CurrentCashBalance { get; }
         IPortfolio? Portfolio { get; }
-        List<ITrade>? Trades { get; set; }
+        List<ITrade>? Trades { get; }
 
         internal void LoadTrades();
         internal void LoadPortfolio();
+        internal bool AddCash(decimal amount);
+        internal bool RemoveCash(decimal amount);
     }
 }
