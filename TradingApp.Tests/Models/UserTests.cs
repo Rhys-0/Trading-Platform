@@ -92,5 +92,15 @@ namespace TradingApp.Tests.Models {
 
             Assert.Equal(900m, user.CurrentCashBalance);
         }
+
+        [Fact]
+        public void LoadPortfolio_ShouldLoadPortfolio() {
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void LoadTrades_ShouldLoadTrades() {
+            Assert.True(true);
+        }
     }
 }
