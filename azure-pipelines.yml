@@ -12,10 +12,11 @@ variables:
   projectPath: 'TradingApp/TradingApp.csproj'
   testProjects: 'TradingApp.Tests/TradingApp.Tests.csproj' 
   publishDir: '$(Build.ArtifactStagingDirectory)/publish'
+  runSettingsFile: '$(Build.SourcesDirectory)/coverlet.runsettings'
 
 steps:
 - checkout: self
-  fetchDepth: 0  # Fetch full history
+  fetchDepth: 0
   persistCredentials: true
 
 - task: UseDotNet@2
@@ -30,7 +31,7 @@ steps:
     command: 'restore'
     projects: '**/*.sln'
 
-# Prepare sonarcloud analysis
+# Prepare SonarCloud analysis
 - task: SonarCloudPrepare@3
   displayName: 'Prepare SonarCloud analysis'
   inputs:
@@ -40,6 +41,7 @@ steps:
     projectKey: 'Rhys-0_Trading-Platform'
     extraProperties: |
       sonar.test.inclusions=**/TradingApp.Tests/**/*.cs
+      sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/coverage.opencover.xml
 
 - task: DotNetCoreCLI@2
   displayName: 'Build'
@@ -49,17 +51,21 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
-  displayName: 'Run Tests'
+  displayName: 'Run Tests with Coverage'
   inputs:
     command: 'test'
     projects: '$(testProjects)'
     arguments: >
       --configuration $(buildConfiguration)
       --no-build
-      --logger trx
-      --collect:"XPlat Code Coverage"
-      --results-directory $(Agent.TempDirectory)
-      
+      --settings $(runSettingsFile)
+
+- task: PublishCodeCoverageResults@2
+  displayName: 'Publish code coverage'
+  inputs:
+    codeCoverageTool: 'OpenCover'
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
+    reportDirectory: '$(Agent.TempDirectory)'
 
 - task: SonarCloudAnalyze@3
   displayName: 'Run SonarCloud analysis'
