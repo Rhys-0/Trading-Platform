@@ -38,8 +38,6 @@ steps:
     scannerMode: 'dotnet'
     projectKey: 'Rhys-0_Trading-Platform'
     extraProperties: |
-      sonar.cs.opencover.reportsPaths=**/*coverage*.xml
-      sonar.cs.vstest.reportsPaths=**/*.trx
       sonar.test.inclusions=**/TradingApp.Tests/**/*.cs
 
 - task: DotNetCoreCLI@2
@@ -58,7 +56,6 @@ steps:
       --configuration $(buildConfiguration)
       --no-build
       --collect:"XPlat Code Coverage"
-      --settings coverlet.runsettings
     publishTestResults: true
 
 - task: PowerShell@2
