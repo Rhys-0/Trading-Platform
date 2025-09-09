@@ -8,7 +8,7 @@ namespace TradingApp.Models {
         public decimal PercentageReturn { get; set; }
         public List<IPosition>? Positions { get; set; }
 
-        internal Portfolio(int portfolioId, int value, decimal netProfit, decimal percentageReturn) {
+        internal Portfolio(int portfolioId, decimal value, decimal netProfit, decimal percentageReturn) {
             PortfolioId = portfolioId;
             Value = value;
             NetProfit = netProfit;
