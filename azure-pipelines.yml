@@ -1,6 +1,7 @@
 trigger:
 - main
 - pipeline-dev
+- database-dev
 
 pool:
   vmImage: windows-latest
