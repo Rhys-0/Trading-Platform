@@ -4,7 +4,7 @@ trigger:
 - database-dev
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 variables:
   buildConfiguration: 'Release'
