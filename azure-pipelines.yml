@@ -2,6 +2,7 @@ trigger:
 - main
 - pipeline-dev
 - stock-news
+- database-dev
 
 pool:
   vmImage: windows-latest
