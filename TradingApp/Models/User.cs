@@ -3,7 +3,7 @@ using TradingApp.Models.Interfaces;
 
 namespace TradingApp.Models {
     internal sealed class User : IUser {
-        public int Id { get; }
+        public long Id { get; }
         public string Username { get; } // No set needed unless users being able to change their username is implemented
         public string Email { get; } // No set needed unless users being able to change their emails is implemented
         public string FirstName { get; }
@@ -13,7 +13,7 @@ namespace TradingApp.Models {
         public IPortfolio? Portfolio { get; private set; }
         public List<ITrade>? Trades { get; private set; }
 
-        internal User(int id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
+        internal User(long id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
             ArgumentOutOfRangeException.ThrowIfNegative(startingCashBalance);
             
             Id = id;

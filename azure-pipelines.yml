@@ -1,9 +1,10 @@
 trigger:
 - main
 - pipeline-dev
+- database-dev
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 variables:
   buildConfiguration: 'Release'
@@ -17,6 +18,9 @@ steps:
 - checkout: self
   fetchDepth: 0
   persistCredentials: true
+
+- script: docker pull postgres:15-alpine
+  displayName: 'Download Postgres Image'
 
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
