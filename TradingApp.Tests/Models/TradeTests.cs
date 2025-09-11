@@ -14,6 +14,7 @@ namespace TradingApp.Tests.Models {
             var quantity = 10;
             var price = 1500.25m;
             var time = DateTime.UtcNow;
+
             var trade = new TradingApp.Models.Trade(tradeId, tradeType, stockSymbol, quantity, price, time);
 
             Assert.Equal(tradeId, trade.TradeId);

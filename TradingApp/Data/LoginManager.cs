@@ -74,7 +74,7 @@ namespace TradingApp.Data {
                 new { Email = email });
 
             rowsAffected = await connection.ExecuteAsync(
-                "INSERT INTO user_portfolios " +
+                "INSERT INTO portfolio " +
                 "(user_id, value, net_profit, percentage_return) " +
                 "VALUES " +
                 "(@UserId, @Value, @NetProfit, @PercentageReturn)",
