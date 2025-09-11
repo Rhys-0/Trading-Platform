@@ -13,11 +13,13 @@ namespace TradingApp.Models {
             TotalQuantity = totalQuantity;
         }
 
+        /// <summary>
+        /// Calculates which stocks to sell based on the quantity requested using a FIFO method.
+        /// </summary>
+        /// <param name="quantity">The quantity of stocks to sell.</param>
+        /// <returns></returns>
+        /// <remarks>This method does not update the database!</remarks>
         public List<IPurchaseLot>? SellStocks(int quantity) {
-            throw new NotImplementedException();
-        }
-
-        public void LoadPurchaseLots() {
             throw new NotImplementedException();
         }
     }
