@@ -20,7 +20,7 @@
 
   <ItemGroup>
 	<InternalsVisibleTo Include="TradingApp.Tests" />
-	<InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>
+	<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     <Folder Include="docs\" />
   </ItemGroup>
 
