@@ -14,9 +14,5 @@ namespace TradingApp.Models {
             NetProfit = netProfit;
             PercentageReturn = percentageReturn;
         }
-
-        public void LoadPositions() {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -66,6 +66,25 @@ namespace TradingApp.Data {
                 return false;
             }
 
+            if (rowsAffected != 1) return false;
+
+            // Create the user's portfolio
+            var userId = await connection.QuerySingleAsync<long>(
+                "SELECT user_id FROM users WHERE email = @Email",
+                new { Email = email });
+
+            rowsAffected = await connection.ExecuteAsync(
+                "INSERT INTO user_portfolios " +
+                "(user_id, value, net_profit, percentage_return) " +
+                "VALUES " +
+                "(@UserId, @Value, @NetProfit, @PercentageReturn)",
+                new {
+                    UserId = userId,
+                    Value = 0.00m,
+                    NetProfit = 0.00m,
+                    PercentageReturn = 0.00m
+                }
+            );
 
             return (rowsAffected == 1);
         }

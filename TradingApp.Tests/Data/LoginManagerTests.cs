@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 using TradingApp.Data;
 using Xunit;
 
+/* ----------------------------------------------------------------------------
+ *  All tests in this file require docker to be installed and running to work!
+ * ---------------------------------------------------------------------------- */
+
 namespace TradingApp.Tests.Data {
     public class LoginManagerTests : IClassFixture<MockDatabase>{
         private readonly MockDatabase _db;

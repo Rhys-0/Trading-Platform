@@ -5,7 +5,5 @@
         decimal NetProfit { get; set; }
         decimal PercentageReturn { get; set; }
         List<IPosition>? Positions { get; set; }
-
-        internal void LoadPositions();
     }
 }

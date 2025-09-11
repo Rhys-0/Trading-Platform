@@ -10,8 +10,8 @@ namespace TradingApp.Models {
         public string LastName { get; }
         public decimal StartingCashBalance { get; }
         public decimal CurrentCashBalance { get; private set; }
-        public IPortfolio? Portfolio { get; private set; }
-        public List<ITrade>? Trades { get; private set; }
+        public IPortfolio? Portfolio { get; set; }
+        public List<ITrade>? Trades { get; set; }
 
         internal User(long id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
             ArgumentOutOfRangeException.ThrowIfNegative(startingCashBalance);
@@ -23,16 +23,6 @@ namespace TradingApp.Models {
             LastName = lastName;
             StartingCashBalance = startingCashBalance;
             CurrentCashBalance = currentCashBalance;
-        }
-
-        public void LoadTrades() {
-            Trades = null;
-            throw new NotImplementedException();
-        }
-
-        public void LoadPortfolio() {
-            Portfolio = null;
-            throw new NotImplementedException();
         }
 
         /// <summary>

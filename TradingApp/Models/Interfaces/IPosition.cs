@@ -6,6 +6,5 @@
         List<IPurchaseLot>? PurchaseLots { get; set; }
 
         internal List<IPurchaseLot>? SellStocks(int quantity);
-        internal void LoadPurchaseLots();
     }
 }
