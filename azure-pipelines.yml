@@ -1,9 +1,10 @@
 trigger:
 - main
 - pipeline-dev
+- database-dev
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 variables:
   buildConfiguration: 'Release'
@@ -11,11 +12,15 @@ variables:
   projectPath: 'TradingApp/TradingApp.csproj'
   testProjects: 'TradingApp.Tests/TradingApp.Tests.csproj' 
   publishDir: '$(Build.ArtifactStagingDirectory)/publish'
+  runSettingsFile: '$(Build.SourcesDirectory)/coverlet.runsettings'
 
 steps:
 - checkout: self
-  fetchDepth: 0  # Fetch full history
+  fetchDepth: 0
   persistCredentials: true
+
+- script: docker pull postgres:15-alpine
+  displayName: 'Download Postgres Image'
 
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
@@ -27,9 +32,9 @@ steps:
   displayName: 'Restore NuGet packages'
   inputs:
     command: 'restore'
-    projects: '$(projectPath)'
+    projects: '**/*.sln'
 
-# Prepare sonarcloud analysis
+# Prepare SonarCloud analysis
 - task: SonarCloudPrepare@3
   displayName: 'Prepare SonarCloud analysis'
   inputs:
@@ -38,8 +43,9 @@ steps:
     scannerMode: 'dotnet'
     projectKey: 'Rhys-0_Trading-Platform'
     extraProperties: |
-      sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/TestResults/coverage.opencover.xml
       sonar.test.inclusions=**/TradingApp.Tests/**/*.cs
+      sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/coverage.opencover.xml
+      sonar.coverage.exclusions=**/Program.cs,**/*.razor,**/wwwroot/**
 
 - task: DotNetCoreCLI@2
   displayName: 'Build'
@@ -49,24 +55,21 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
-  displayName: 'Run Tests'
+  displayName: 'Run Tests with Coverage'
   inputs:
     command: 'test'
     projects: '$(testProjects)'
     arguments: >
       --configuration $(buildConfiguration)
       --no-build
-      --logger trx
-      /p:CollectCoverage=true
-      /p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/coverage.opencover.xml
-      /p:CoverletOutputFormat=opencover
+      --settings $(runSettingsFile)
 
-- task: PublishTestResults@2
-  displayName: 'Publish Test Results'
+- task: PublishCodeCoverageResults@2
+  displayName: 'Publish code coverage'
   inputs:
-    testResultsFiles: '**/*.trx'
-    testRunTitle: 'Unit Tests'
+    codeCoverageTool: 'OpenCover'
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
+    reportDirectory: '$(Agent.TempDirectory)'
 
 - task: SonarCloudAnalyze@3
   displayName: 'Run SonarCloud analysis'
-
