@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Hosting;
 using TradingApp.Components;
 using TradingApp.Data;
 using TradingApp.Data.Interfaces;
+using TradingApp.Models;
+using TradingApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +14,7 @@ builder.Services.AddRazorComponents()
 // Singletons
 builder.Services.AddSingleton<DatabaseConnection>();
 builder.Services.AddSingleton<NewsService>();
+builder.Services.AddSingleton<Stocks>();
 
 // Scoped classes
 builder.Services.AddScoped<ILoginManager, LoginManager>();
@@ -18,6 +22,9 @@ builder.Services.AddScoped<ILoginManager, LoginManager>();
 // Register HttpClient for Stock News API calls
 builder.Services.AddHttpClient<NewsService>();
 builder.Services.AddScoped<NewsService>();
+
+// Background Services
+builder.Services.AddHostedService<StockPriceService>();
 
 var app = builder.Build();
 
