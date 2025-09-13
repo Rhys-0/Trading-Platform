@@ -22,7 +22,7 @@ namespace TradingApp.Services {
             }
 
             decimal value = 0.00m;
-            foreach (var position in user.Portfolio.Positions) {
+            foreach (var position in user.Portfolio.Positions.Values) {
                 try {
                     value += (position.TotalQuantity * _stocks.StockList[position.StockSymbol].Price);
                 } catch (KeyNotFoundException) {

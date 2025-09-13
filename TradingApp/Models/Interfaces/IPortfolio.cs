@@ -4,6 +4,9 @@
         decimal Value { get; set; }
         decimal NetProfit { get; set; }
         decimal PercentageReturn { get; set; }
-        List<IPosition>? Positions { get; set; }
+        Dictionary<string, IPosition>? Positions { get; set; }
+
+        public void RemoveStocks(string stockSymbol, int quantity);
+        public void AddStocks(string stockSymbol, int quantity, decimal pricePerStock);
     }
 }

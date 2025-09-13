@@ -18,6 +18,7 @@ builder.Services.AddSingleton<Stocks>();
 
 // Scoped classes
 builder.Services.AddScoped<ILoginManager, LoginManager>();
+builder.Services.AddScoped<UserService>();
 
 // Background Services
 builder.Services.AddHostedService<StockPriceService>();

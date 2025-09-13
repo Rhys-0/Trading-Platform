@@ -25,13 +25,15 @@ namespace TradingApp.Models {
             CurrentCashBalance = currentCashBalance;
         }
 
+        
+
         /// <summary>
         /// Add cash to the users balance
         /// </summary>
         /// <param name="amount">The amount to be added to the user balance</param>
         /// <returns>True if the cash was addedd successfully, false otherwise</returns>
         public bool AddCash(decimal amount) {
-            if(amount < 0) {
+            if(amount <= 0) {
                 return false;
             }
 

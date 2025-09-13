@@ -2,7 +2,7 @@
 
 namespace TradingApp.Models {
     internal sealed class PurchaseLot : IPurchaseLot {
-        public int PurchaseLotId { get; }
+        public int PurchaseLotId { get; set; }
 
         public int Quantity { get; set; }
 
