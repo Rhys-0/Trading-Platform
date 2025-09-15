@@ -1,10 +1,11 @@
-﻿using Moq;
-using Xunit;
-using Microsoft.Extensions.Logging.Testing;
-using TradingApp.Data;
+﻿using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Configuration;
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
+using Moq;
+using System.Runtime.CompilerServices;
+using TradingApp.Data;
+using Xunit;
 
 namespace TradingApp.Tests.Data {
     public class DatabaseConnectionTests : IClassFixture<MockDatabase>{
@@ -42,6 +43,39 @@ namespace TradingApp.Tests.Data {
                 Times.Once
             );
         }
+
+        [Fact]
+        public async Task CreateConnectionAsync_WithInvalidParams_ShouldThrowException() {
+            // Arrange
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> {
+                    {"ConnectionStrings:DefaultConnection", "Malformed connection string"}
+                })
+                .Build();
+
+            var mock = new Mock<ILogger<DatabaseConnection>>();
+            ILogger<DatabaseConnection> logger = mock.Object;
+            var dbConnection = new DatabaseConnection(config, logger);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ConnectionAbortedException>(async () => await dbConnection.CreateConnectionAsync());
+        }
+
+        [Fact]
+        public void Constructor_WithNoConnectionString_ShouldThrowException() {
+            // Arrange empty config without connection string
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> {
+                })
+                .Build();
+
+            var mock = new Mock<ILogger<DatabaseConnection>>();
+            ILogger<DatabaseConnection> logger = mock.Object;
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => new DatabaseConnection(config, logger));
+        }
+
     }
 
 

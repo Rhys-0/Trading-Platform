@@ -1,5 +1,5 @@
 ﻿using TradingApp.Models;
-using TradingApp.Models.Interfaces;
+
 
 namespace TradingApp.Services {
     internal class PortfolioService {
@@ -16,7 +16,7 @@ namespace TradingApp.Services {
         /// <remarks>This method does not update the database!</remarks>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="KeyNotFoundException"></exception>
-        internal void UpdateUserPortfolio(IUser user) {
+        internal void UpdateUserPortfolio(User user) {
             if(user.Portfolio == null || user.Portfolio.Positions == null) {
                 throw new InvalidOperationException("User does not have a portfolio to update, ensure it is loaded first.");
             }

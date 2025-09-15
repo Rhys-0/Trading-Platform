@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting;
+using TradingApp.BackgroundServices;
 using TradingApp.Components;
 using TradingApp.Data;
 using TradingApp.Data.Interfaces;
@@ -18,6 +19,7 @@ builder.Services.AddSingleton<Stocks>();
 
 // Scoped classes
 builder.Services.AddScoped<ILoginManager, LoginManager>();
+builder.Services.AddScoped<UserManager>();
 builder.Services.AddScoped<UserService>();
 
 // Register HttpClient for Stock News API calls

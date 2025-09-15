@@ -2,7 +2,7 @@
     internal class Stocks {
         internal Dictionary<string, Stock> StockList { get; }
 
-        internal Stocks() {
+        public Stocks() {
             StockList = new Dictionary<string, Stock> {
                 { "AAPL", new Stock("AAPL", "Apple Inc.", 0.00m) },
                 { "GOOGL", new Stock("GOOGL", "Alphabet Inc.", 0.00m) },
