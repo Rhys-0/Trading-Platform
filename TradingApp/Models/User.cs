@@ -1,8 +1,8 @@
 ﻿using System.Linq.Expressions;
-using TradingApp.Models.Interfaces;
+
 
 namespace TradingApp.Models {
-    internal sealed class User : IUser {
+    internal sealed class User {
         public long Id { get; }
         public string Username { get; } // No set needed unless users being able to change their username is implemented
         public string Email { get; } // No set needed unless users being able to change their emails is implemented
@@ -10,8 +10,8 @@ namespace TradingApp.Models {
         public string LastName { get; }
         public decimal StartingCashBalance { get; }
         public decimal CurrentCashBalance { get; private set; }
-        public IPortfolio? Portfolio { get; set; }
-        public List<ITrade>? Trades { get; set; }
+        public Portfolio? Portfolio { get; set; }
+        public List<Trade>? Trades { get; set; }
 
         internal User(long id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
             ArgumentOutOfRangeException.ThrowIfNegative(startingCashBalance);

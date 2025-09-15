@@ -1,8 +1,8 @@
-﻿using TradingApp.Models.Interfaces;
+﻿
 
 namespace TradingApp.Models {
-    internal sealed class PurchaseLot : IPurchaseLot {
-        public int PurchaseLotId { get; set; }
+    internal sealed class PurchaseLot {
+        public long PurchaseLotId { get; set; }
 
         public int Quantity { get; set; }
 
@@ -10,7 +10,7 @@ namespace TradingApp.Models {
 
         public DateTime PurchaseDate { get; }
 
-        internal PurchaseLot(int purchaseLotId, int quantity, decimal purchasePrice, DateTime purchaseDate) {
+        internal PurchaseLot(long purchaseLotId, int quantity, decimal purchasePrice, DateTime purchaseDate) {
             PurchaseLotId = purchaseLotId;
             Quantity = quantity;
             PurchasePrice = purchasePrice;

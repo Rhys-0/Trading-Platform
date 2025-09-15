@@ -1,13 +1,13 @@
-﻿using TradingApp.Models.Interfaces;
+﻿
 
 namespace TradingApp.Models {
-    internal sealed class Position : IPosition {
-        public int PositionId { get; set; }
+    internal sealed class Position {
+        public long PositionId { get; set; }
         public string StockSymbol { get; }
         public int TotalQuantity { get; set; }
-        public List<IPurchaseLot>? PurchaseLots { get; set; }
+        public List<PurchaseLot>? PurchaseLots { get; set; }
 
-        internal Position(int positionId, string stockSymbol, int totalQuantity) {
+        internal Position(long positionId, string stockSymbol, int totalQuantity) {
             PositionId = positionId;
             StockSymbol = stockSymbol;
             TotalQuantity = totalQuantity;
@@ -26,10 +26,10 @@ namespace TradingApp.Models {
             }
 
             // Sort purchase lots by purchase date ascending (oldest first)
-            List<IPurchaseLot> sortedAscending = PurchaseLots.OrderBy(lot => lot.PurchaseDate).ToList();
+            List<PurchaseLot> sortedAscending = PurchaseLots.OrderBy(lot => lot.PurchaseDate).ToList();
 
             int remainingToSell = quantity;
-            foreach (IPurchaseLot lot in sortedAscending) {
+            foreach (PurchaseLot lot in sortedAscending) {
                 if (remainingToSell <= 0) break;
                 if (lot.Quantity <= remainingToSell) {
                     // Sell the entire lot
@@ -44,6 +44,7 @@ namespace TradingApp.Models {
 
             // Remove lots that are fully sold using LINQ
             PurchaseLots = PurchaseLots.Where(lot => lot.Quantity > 0).ToList();
+            TotalQuantity -= quantity;
         }
 
         public void AddStocks(int quantity, decimal pricePerStock) {
@@ -55,7 +56,7 @@ namespace TradingApp.Models {
 
             // Create a new purchase lot for the added stocks
             // ID will be set when saved to DB
-            IPurchaseLot newLot = new PurchaseLot(-1, quantity, pricePerStock, DateTime.UtcNow);
+            PurchaseLot newLot = new PurchaseLot(-1, quantity, pricePerStock, DateTime.UtcNow);
 
             PurchaseLots.Add(newLot);
             TotalQuantity += quantity;
