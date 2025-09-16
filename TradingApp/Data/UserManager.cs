@@ -118,7 +118,7 @@ namespace TradingApp.Data {
         /// <param name="price"></param>
         /// <param name="tradeType"></param>
         /// <exception cref="ArgumentException">Thrown if the trade type is invalid</exception>"
-        public async Task LogTrade(User user, string stockSymbol, int quantity, decimal price, string tradeType) {
+        public async Task<long> LogTrade(User user, string stockSymbol, int quantity, decimal price, string tradeType) {
             using var connection = await _connection.CreateConnectionAsync();
 
             if (tradeType != "BUY" && tradeType != "SELL") {
@@ -139,6 +139,7 @@ namespace TradingApp.Data {
 
             user.Trades ??= [];
             user.Trades.Add(new Trade(tradeId, tradeType, stockSymbol, quantity, price, time));
+            return tradeId;
         }
 
         /// <summary>
@@ -207,7 +208,7 @@ namespace TradingApp.Data {
 
         }
 
-        public async Task<bool> OpenPosition(Position position, long portfolioId) {
+        public async Task<bool> OpenPosition(Position position, long portfolioId, long tradeId) {
             using var connection = await _connection.CreateConnectionAsync();
 
             // Start a transaction to ensure data integrity
@@ -226,12 +227,13 @@ namespace TradingApp.Data {
                 );
 
                 foreach (var lot in position.PurchaseLots!) {
-                    lot.PurchaseLotId = await connection.QuerySingleOrDefaultAsync(
-                        "INSERT INTO purchase_lot (position_id, quantity, purchase_price, purchase_date) " +
-                        "VALUES (@PositionId, @Quantity, @PurchasePrice, @PurchaseDate) " +
+                    lot.PurchaseLotId = await connection.QuerySingleOrDefaultAsync<long>(
+                        "INSERT INTO purchase_lot (position_id, trade_id, quantity, purchase_price, purchase_date) " +
+                        "VALUES (@PositionId, @TradeId, @Quantity, @PurchasePrice, @PurchaseDate) " +
                         "RETURNING purchase_lot_id",
                         new {
                             position.PositionId,
+                            TradeId = tradeId,
                             lot.Quantity,
                             lot.PurchasePrice,
                             lot.PurchaseDate
