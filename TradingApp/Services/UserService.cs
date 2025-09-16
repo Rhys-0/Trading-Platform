@@ -71,11 +71,11 @@ namespace TradingApp.Services {
             user.Portfolio.AddStocks(stockTicker, quantity, stock.Price);
 
             // Log the trade
-            await _UserManager.LogTrade(user, stockTicker, quantity, stock.Price, "BUY");
+            var tradeId = await _UserManager.LogTrade(user, stockTicker, quantity, stock.Price, "BUY");
             await _UserManager.UpdateUser(user);
 
             if (user.Portfolio.Positions[stockTicker].PurchaseLots!.Count == 1) {
-                await _UserManager.OpenPosition(user.Portfolio.Positions[stockTicker], user.Portfolio.PortfolioId);
+                await _UserManager.OpenPosition(user.Portfolio.Positions[stockTicker], user.Portfolio.PortfolioId, tradeId);
                 return true;
             }
 

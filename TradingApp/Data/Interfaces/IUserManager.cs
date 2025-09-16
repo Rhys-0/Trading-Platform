@@ -7,6 +7,6 @@ namespace TradingApp.Data.Interfaces {
         public Task<bool> UpdateUser(User user);
         public Task<bool> LoadUserPortfolio(User user);
         public Task LoadUserTrades(User user);
-        public Task LogTrade(User user, string stockSymbol, int quantity, decimal price, string tradeType);
+        public Task<long> LogTrade(User user, string stockSymbol, int quantity, decimal price, string tradeType);
     }
 }

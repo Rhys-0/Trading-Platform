@@ -350,7 +350,7 @@ namespace TradingApp.Tests.Data {
             var user = await userManager.GetUser("testuser");
 
             // Act
-            await userManager.LogTrade(user!, "AAPL", 10, 200.00m, "BUY");
+            var tradeId = await userManager.LogTrade(user!, "AAPL", 10, 200.00m, "BUY");
             var trade = await _db.QueryFirstOrDefaultAsync<Trade>(@"
                 SELECT trade_id AS TradeId,
                        trade_type AS TradeType,
@@ -370,6 +370,7 @@ namespace TradingApp.Tests.Data {
             Assert.Single(user.Trades);
             Assert.Equal("BUY", user.Trades[0].TradeType);
             Assert.Equal("AAPL", user.Trades[0].StockSymbol);
+            Assert.Equal(tradeId, trade.TradeId);
             Assert.Equal(10, user.Trades[0].Quantity);
             Assert.Equal(trade.Time, user.Trades[0].Time);
             Assert.Equal(trade.TradeType, user.Trades[0].TradeType);
@@ -392,7 +393,7 @@ namespace TradingApp.Tests.Data {
             var user = await userManager.GetUser("testuser");
 
             // Act
-            await userManager.LogTrade(user!, "AAPL", 10, 200.00m, "SELL");
+            var tradeId = await userManager.LogTrade(user!, "AAPL", 10, 200.00m, "SELL");
             var trade = await _db.QueryFirstOrDefaultAsync<Trade>(@"
                 SELECT trade_id AS TradeId,
                        trade_type AS TradeType,
@@ -412,6 +413,7 @@ namespace TradingApp.Tests.Data {
             Assert.Single(user.Trades);
             Assert.Equal("SELL", user.Trades[0].TradeType);
             Assert.Equal("AAPL", user.Trades[0].StockSymbol);
+            Assert.Equal(tradeId, trade.TradeId);
             Assert.Equal(10, user.Trades[0].Quantity);
             Assert.Equal(trade.Time, user.Trades[0].Time);
             Assert.Equal(trade.TradeType, user.Trades[0].TradeType);
