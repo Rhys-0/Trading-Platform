@@ -1,4 +1,5 @@
-﻿using TradingApp.Models;
+﻿using Microsoft.AspNetCore.Identity;
+using TradingApp.Models;
 
 
 namespace TradingApp.Services {
@@ -30,6 +31,8 @@ namespace TradingApp.Services {
                 }
             }
             user.Portfolio.Value = value;
+            user.Portfolio.NetProfit = (user.CurrentCashBalance + value) - user.StartingCashBalance;
+            user.Portfolio.PercentageReturn = user.Portfolio.NetProfit / user.StartingCashBalance;
         }
     }
 }
