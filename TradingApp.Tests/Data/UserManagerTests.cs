@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using TradingApp.Data;
 using TradingApp.Models;
+using Xunit;
+using Moq;
 
 /* ----------------------------------------------------------------------------
  *  All tests in this file require docker to be installed and running to work!
