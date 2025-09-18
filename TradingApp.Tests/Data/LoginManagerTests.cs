@@ -6,10 +6,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TradingApp.Data;
+using TradingApp.Models;
 using Xunit;
 
+/* ----------------------------------------------------------------------------
+ *  All tests in this file require docker to be installed and running to work!
+ * ---------------------------------------------------------------------------- */
+
 namespace TradingApp.Tests.Data {
-    public class LoginManagerTests : IClassFixture<MockDatabase>{
+    public class LoginManagerTests : IClassFixture<MockDatabase> {
         private readonly MockDatabase _db;
         public LoginManagerTests(MockDatabase db) => _db = db;
 
@@ -108,9 +113,23 @@ namespace TradingApp.Tests.Data {
 
             // Act
             var response = await loginManager.AddUser("testuser", "test@email.com", "hashedPass", "Test", "User");
+            var newUser = await _db.QueryFirstOrDefaultAsync<User>(
+                "SELECT user_id AS id, " +
+                "username, " +
+                "email, " +
+                "first_name AS firstName, " +
+                "last_name AS lastName, " +
+                "starting_cash_balance AS startingCashBalance, " +
+                "current_cash_balance AS currentCashBalance " +
+                "FROM users " +
+                "WHERE username = @Username",
+                new { Username = "testuser" });
 
             // Assert
             Assert.True(response);
+            Assert.NotNull(newUser);
+            Assert.Equal("testuser", newUser.Username);
+            Assert.Equal("test@email.com", newUser.Email);
         }
 
         [Fact]

@@ -51,7 +51,7 @@ namespace TradingApp.Tests {
                   position_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
                   portfolio_id bigint NOT NULL,
                   stock_symbol text NOT NULL,
-                  total_quantity bigint NOT NULL,
+                  total_quantity int4 NOT NULL,
                   CONSTRAINT position_pkey PRIMARY KEY (position_id),
                   CONSTRAINT position_portfolio_id_fkey FOREIGN KEY (portfolio_id) REFERENCES public.portfolio(portfolio_id)
                 );
@@ -60,7 +60,7 @@ namespace TradingApp.Tests {
                   user_id bigint NOT NULL,
                   trade_type text NOT NULL,
                   stock_symbol text NOT NULL,
-                  quantity bigint NOT NULL,
+                  quantity int4 NOT NULL,
                   price numeric NOT NULL,
                   time timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'utc'::text),
                   CONSTRAINT trade_pkey PRIMARY KEY (trade_id),
@@ -70,7 +70,7 @@ namespace TradingApp.Tests {
                   purchase_lot_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
                   position_id bigint NOT NULL,
                   trade_id bigint NOT NULL,
-                  quantity bigint NOT NULL,
+                  quantity int4 NOT NULL,
                   purchase_price numeric NOT NULL,
                   purchase_date timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'utc'::text),
                   CONSTRAINT purchase_lot_pkey PRIMARY KEY (purchase_lot_id),
@@ -94,10 +94,16 @@ namespace TradingApp.Tests {
                 DELETE FROM public.users;");
         }
 
-        public async Task ExecuteAsync(string sql) {
+        public async Task ExecuteAsync(string sql, object? param = null) {
             using var connection = new NpgsqlConnection(ConnectionString);
             await connection.OpenAsync();
-            await connection.ExecuteAsync(sql);
+            await connection.ExecuteAsync(sql, param);
+        }
+
+        public async Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null) {
+            using var connection = new NpgsqlConnection(ConnectionString);
+            await connection.OpenAsync();
+            return await connection.QueryFirstOrDefaultAsync<T>(sql, param);
         }
     }
 }
