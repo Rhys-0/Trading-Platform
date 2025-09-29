@@ -1,40 +1,73 @@
 @page "/news"
-@using TradingApp.Components 
 @using TradingApp.Data
-@inject NewsService NewsService
 
-<PageTitle>Stock Market News</PageTitle>
+<div class="news-container">
+    <div class="header-section">
+        <h1>Market News</h1>
+        <p class="lead">Stay informed with the latest market updates and financial news</p>
+    </div>
 
-<div class="container mt-4">
-    <h2>📈 Stock Market News</h2>
-    <p class="text-muted">Latest updates and financial headlines</p>
-
-    @if (newsArticles == null)
-    {
-        <p>Loading news...</p>
-    }
-    else
-    {
-        <div class="row">
-            @foreach (var article in newsArticles)
-            {
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <NewsCard Title="@article.Title"
-                              Description="@article.Description"
-                              Url="@article.Url"
-                              PublishedAt="@article.PublishedAt"
-                              Source="@article.Source" />
-                </div>
-            }
-        </div>
-    }
+    <div class="news-grid">
+        @foreach (var article in MockNews())
+        {
+            <div class="news-item">
+                <NewsCard 
+                    Title="@article.Title"
+                    Description="@article.Description"
+                    Url="@article.Url"
+                    Source="@article.Source"
+                    PublishedAt="@article.PublishedAt" />
+            </div>
+        }
+    </div>
 </div>
 
 @code {
-    private List<NewsArticle>? newsArticles;
-
-    protected override async Task OnInitializedAsync()
+    private static List<NewsArticle> MockNews()
     {
-        newsArticles = await NewsService.GetLatestNews();
+        return new List<NewsArticle>
+        {
+            new()
+            {
+                Title = "Tesla Stock Surges After AI Announcement",
+                Description = "Tesla shares jumped 8% following the company's announcement of breakthrough AI technology for its autonomous driving systems.",
+                Source = "Market Watch",
+                PublishedAt = DateTime.Now.AddHours(-2),
+                Url = "https://example.com/tesla-ai"
+            },
+            new()
+            {
+                Title = "Fed Signals Potential Rate Changes",
+                Description = "Federal Reserve hints at possible interest rate adjustments in response to latest economic indicators and inflation data.",
+                Source = "Financial Times",
+                PublishedAt = DateTime.Now.AddHours(-3),
+                Url = "https://example.com/fed-rates"
+            },
+            new()
+            {
+                Title = "Apple Sets New Revenue Record",
+                Description = "Apple Inc. reports record-breaking quarterly revenue, driven by strong iPhone sales and growing services segment.",
+                Source = "Tech Daily",
+                PublishedAt = DateTime.Now.AddHours(-5),
+                Url = "https://example.com/apple-earnings"
+            },
+            new()
+            {
+                Title = "Nvidia Releases New GPU Series",
+                Description = "Nvidia announces next-generation graphics cards, targeting both gaming and AI markets with improved performance.",
+                Source = "Tech Insider",
+                PublishedAt = DateTime.Now.AddHours(-6),
+                Url = "https://example.com/nvidia-launch"
+            }
+        };
+    }
+
+    private class NewsArticle
+    {
+        public required string Title { get; set; }
+        public required string Description { get; set; }
+        public required string Url { get; set; }
+        public required string Source { get; set; }
+        public DateTime PublishedAt { get; set; }
     }
 }
