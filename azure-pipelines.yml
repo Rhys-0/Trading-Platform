@@ -3,6 +3,8 @@ trigger:
 - pipeline-dev
 - stock-news
 - database-dev
+- stock-news
+- order-page
 
 pool:
   vmImage: ubuntu-latest
