@@ -1,5 +1,6 @@
 @page "/news"
 @using TradingApp.Data
+@inject NewsService NewsService
 
 <div class="news-container">
     <div class="header-section">
@@ -7,67 +8,52 @@
         <p class="lead">Stay informed with the latest market updates and financial news</p>
     </div>
 
-    <div class="news-grid">
-        @foreach (var article in MockNews())
-        {
-            <div class="news-item">
-                <NewsCard 
-                    Title="@article.Title"
-                    Description="@article.Description"
-                    Url="@article.Url"
-                    Source="@article.Source"
-                    PublishedAt="@article.PublishedAt" />
+    @if (articles == null)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
-        }
-    </div>
+        </div>
+    }
+    else if (!articles.Any())
+    {
+        <div class="alert alert-custom">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            No news articles available at the moment. Please try again later.
+        </div>
+    }
+    else
+    {
+        <div class="news-grid">
+            @foreach (var article in articles)
+            {
+                <div class="news-item">
+                    <NewsCard 
+                        Title="@article.Title"
+                        Description="@article.Description"
+                        Url="@article.Url"
+                        Source="@article.Source"
+                        PublishedAt="@article.PublishedAt" />
+                </div>
+            }
+        </div>
+    }
 </div>
 
 @code {
-    private static List<NewsArticle> MockNews()
-    {
-        return new List<NewsArticle>
-        {
-            new()
-            {
-                Title = "Tesla Stock Surges After AI Announcement",
-                Description = "Tesla shares jumped 8% following the company's announcement of breakthrough AI technology for its autonomous driving systems.",
-                Source = "Market Watch",
-                PublishedAt = DateTime.Now.AddHours(-2),
-                Url = "https://example.com/tesla-ai"
-            },
-            new()
-            {
-                Title = "Fed Signals Potential Rate Changes",
-                Description = "Federal Reserve hints at possible interest rate adjustments in response to latest economic indicators and inflation data.",
-                Source = "Financial Times",
-                PublishedAt = DateTime.Now.AddHours(-3),
-                Url = "https://example.com/fed-rates"
-            },
-            new()
-            {
-                Title = "Apple Sets New Revenue Record",
-                Description = "Apple Inc. reports record-breaking quarterly revenue, driven by strong iPhone sales and growing services segment.",
-                Source = "Tech Daily",
-                PublishedAt = DateTime.Now.AddHours(-5),
-                Url = "https://example.com/apple-earnings"
-            },
-            new()
-            {
-                Title = "Nvidia Releases New GPU Series",
-                Description = "Nvidia announces next-generation graphics cards, targeting both gaming and AI markets with improved performance.",
-                Source = "Tech Insider",
-                PublishedAt = DateTime.Now.AddHours(-6),
-                Url = "https://example.com/nvidia-launch"
-            }
-        };
-    }
+    private List<NewsArticle>? articles;
 
-    private class NewsArticle
+    protected override async Task OnInitializedAsync()
     {
-        public required string Title { get; set; }
-        public required string Description { get; set; }
-        public required string Url { get; set; }
-        public required string Source { get; set; }
-        public DateTime PublishedAt { get; set; }
+        try
+        {
+            articles = await NewsService.GetMarketNewsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in StockNews: {ex.Message}");
+            articles = new List<NewsArticle>();
+        }
     }
 }

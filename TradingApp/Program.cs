@@ -15,6 +15,10 @@ builder.Services.AddScoped<ILoginManager, LoginManager>();
 
 builder.Services.AddSingleton<NewsService>();
 
+// Register HttpClient for Stock News API calls
+builder.Services.AddHttpClient<NewsService>();
+builder.Services.AddScoped<NewsService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
