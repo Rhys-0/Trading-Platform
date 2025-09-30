@@ -40,30 +40,30 @@
     <div class="status" style="margin-top:.75rem">
       <div style="display:flex; gap:.5rem; flex-wrap:wrap">
         <button type="button" class="text-btn"
-                @onclick="RefreshOnce"
+                @onclick="@RefreshOnce"
                 @onclick:preventDefault
                 @onclick:stopPropagation>
           Refresh now
         </button>
 
         <button type="button" class="text-btn"
-                @onclick="BumpTsla"
+                @onclick="@BumpTsla"
                 @onclick:preventDefault
                 @onclick:stopPropagation>
           Bump TSLA +1
         </button>
 
         <button type="button" class="text-btn"
-                @onclick="CheckJsReady"
+                @onclick="@CheckModuleReady"
                 @onclick:preventDefault
                 @onclick:stopPropagation>
-          Check JS ready (from .NET)
+          Check module ready
         </button>
       </div>
 
       <div><small>Clicks: @_clicks | Last click: @_lastClick</small></div>
       <div><small>Last update: @_lastUpdated</small></div>
-      <div><small>Last JS ready (from .NET): @_lastJsReady</small></div>
+      <div><small>Module ready: @_moduleReady</small></div>
       <div><small>Last JSON len: @_lastJsonLen</small></div>
       <div><small>Last interop call: @_lastInterop</small></div>
       @if (!string.IsNullOrEmpty(_lastError))
@@ -98,16 +98,19 @@
     }
 
     private readonly Dictionary<string, QuoteDto> Quotes = new();
+
     private CancellationTokenSource? _cts;
     private bool _started;
     private string? _lastUpdated = "(none yet)";
     private string? _lastError;
 
+    private IJSObjectReference? _bridge;
+    private string _moduleReady = "false";
+
     // diagnostics
     private int _clicks;
     private string _lastClick = "(never)";
     private string _lastInterop = "(never)";
-    private string _lastJsReady = "(unknown)";
     private int _lastJsonLen;
 
     private IEnumerable<string> FilteredSymbols =>
@@ -126,49 +129,27 @@
         if (!firstRender || _started) return;
         _started = true;
 
+        try
+        {
+            _bridge = await JS.InvokeAsync<IJSObjectReference>("import", "/js/tradingviewBridge.js?v=1");
+            var ok = await _bridge.InvokeAsync<bool>("ready");
+            _moduleReady = ok ? "true" : "false";
+        }
+        catch (Exception ex)
+        {
+            _moduleReady = "error: " + ex.Message;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         _cts = new CancellationTokenSource();
         _ = RefreshLoop(_cts.Token);
         await Task.CompletedTask;
     }
 
-    private async Task<T> JsOnUiAsync<T>(string identifier, params object[] args)
-    {
-        T? result = default;
-        await InvokeAsync(async () =>
-        {
-            result = await JS.InvokeAsync<T>(identifier, args).AsTask();
-        });
-        return result!;
-    }
-
-    private async Task<bool> WaitForTradingViewReady(CancellationToken token)
-    {
-        var start = DateTime.UtcNow;
-        while (!token.IsCancellationRequested)
-        {
-            try
-            {
-                var ready = await JsOnUiAsync<bool>("tradingViewReady");
-                if (ready) return true;
-            }
-            catch { }
-
-            if (DateTime.UtcNow - start > TimeSpan.FromSeconds(10))
-            {
-                _lastError = "tradingViewReady() never returned true. Ensure tradingView.js is included BEFORE blazor.server.js.";
-                await InvokeAsync(StateHasChanged);
-                return false;
-            }
-
-            try { await Task.Delay(300, token); } catch { }
-        }
-        return false;
-    }
-
     private async Task RefreshLoop(CancellationToken token)
     {
-        if (!await WaitForTradingViewReady(token))
-            return;
+        if (_bridge is null) return;
 
         var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(4));
@@ -196,12 +177,18 @@
 
     private async Task RefreshOnceInternal(JsonSerializerOptions opts)
     {
+        if (_bridge is null)
+        {
+            _lastError = "JS bridge not loaded.";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         try
         {
-            _lastInterop = "calling getQuotesJson @ " + DateTime.Now.ToLongTimeString();
+            _lastInterop = "bridge.getQuotesJson @ " + DateTime.Now.ToLongTimeString();
 
-            var json = await JsOnUiAsync<string>("tradingView.getQuotesJson", Symbols);
-
+            var json = await _bridge.InvokeAsync<string>("getQuotesJson", (object)Symbols);
             _lastJsonLen = json?.Length ?? 0;
 
             if (string.IsNullOrWhiteSpace(json))
@@ -242,18 +229,11 @@
         }
     }
 
-    private async Task CheckJsReady()
+    private Task CheckModuleReady()
     {
-        try
-        {
-            var ready = await JsOnUiAsync<bool>("tradingViewReady");
-            _lastJsReady = ready ? "true" : "false";
-        }
-        catch (Exception ex)
-        {
-            _lastJsReady = "error: " + ex.Message;
-        }
-        await InvokeAsync(StateHasChanged);
+        _clicks++;
+        _lastClick = DateTime.Now.ToLongTimeString();
+        return InvokeAsync(StateHasChanged);
     }
 
     private async Task BumpTsla()
