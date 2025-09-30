@@ -1,4 +1,8 @@
-@namespace TradingApp.Components
+ï»¿@namespace TradingApp.Components
+@using System.Text.Json
+@using System.Threading
+@inject IJSRuntime JS
+@implements IDisposable
 
 <div class="stocks-grid">
   <aside class="stocks-list">
@@ -7,18 +11,21 @@
     <ul class="symbols">
       @foreach (var s in FilteredSymbols)
       {
-        var q = Quotes[s];
+        var q = Quotes.TryGetValue(s, out var qq) ? qq : null;
         <li>
           <div class="symbol-card @(s == Selected ? "active" : null)" @onclick="() => Select(s)">
             <div class="info">
               <div class="sym">@s</div>
-              <div class="row">
-                <span class="price">@q.Price:F2</span>
-                <span class="chg @(q.IsUp ? "up" : "down")">
-                  @(q.IsUp ? "+" : "-")@Math.Abs(q.Change):F2
-                  (<span>@Math.Abs(q.ChangePercent):F2</span>%)
-                </span>
-              </div>
+              @if (q is not null)
+              {
+                <div class="row">
+                  <span class="price">@q.Price.ToString("F2")</span>
+                  <span class="chg @(q.IsUp ? "up" : "down")">
+                    @(q.IsUp ? "+" : "-")@Math.Abs(q.Change).ToString("F2")
+                    (@Math.Abs(q.ChangePercent).ToString("F2")%)
+                  </span>
+                </div>
+              }
             </div>
 
             <div class="actions">
@@ -29,6 +36,41 @@
         </li>
       }
     </ul>
+
+    <div class="status" style="margin-top:.75rem">
+      <div style="display:flex; gap:.5rem; flex-wrap:wrap">
+        <button type="button" class="text-btn"
+                @onclick="RefreshOnce"
+                @onclick:preventDefault
+                @onclick:stopPropagation>
+          Refresh now
+        </button>
+
+        <button type="button" class="text-btn"
+                @onclick="BumpTsla"
+                @onclick:preventDefault
+                @onclick:stopPropagation>
+          Bump TSLA +1
+        </button>
+
+        <button type="button" class="text-btn"
+                @onclick="CheckJsReady"
+                @onclick:preventDefault
+                @onclick:stopPropagation>
+          Check JS ready (from .NET)
+        </button>
+      </div>
+
+      <div><small>Clicks: @_clicks | Last click: @_lastClick</small></div>
+      <div><small>Last update: @_lastUpdated</small></div>
+      <div><small>Last JS ready (from .NET): @_lastJsReady</small></div>
+      <div><small>Last JSON len: @_lastJsonLen</small></div>
+      <div><small>Last interop call: @_lastInterop</small></div>
+      @if (!string.IsNullOrEmpty(_lastError))
+      {
+        <div><small class="error">Error: @_lastError</small></div>
+      }
+    </div>
   </aside>
 
   <section class="stocks-view">
@@ -37,85 +79,218 @@
 </div>
 
 @code {
-  private string Selected = "NASDAQ:TSLA";
-  private string search = "";
+    private string Selected = "NASDAQ:TSLA";
+    private string search = "";
 
-  // Seed list (Will swap later)
-  private readonly string[] Symbols =
-  {
-    "NASDAQ:TSLA","NASDAQ:AAPL","NASDAQ:MSFT","NASDAQ:NVDA",
-    "NASDAQ:AMZN","NYSE:SPY","NYSE:KO","NYSE:DIS"
-  };
-
-  private IEnumerable<string> FilteredSymbols =>
-      string.IsNullOrWhiteSpace(search)
-        ? Symbols
-        : Symbols.Where(s => s.Contains(search, StringComparison.OrdinalIgnoreCase));
-
-  //Quote model + mock ticker (works without API key)
-  private sealed class Quote
-  {
-    public decimal Price { get; set; }
-    public decimal PrevPrice { get; set; }
-    public decimal Change => Price - PrevPrice;
-    public decimal ChangePercent => PrevPrice == 0 ? 0 : (Change / PrevPrice) * 100m;
-    public bool IsUp => Change >= 0;
-  }
-
-  private readonly Dictionary<string, Quote> Quotes = new();
-  private System.Threading.PeriodicTimer? _timer;
-  private readonly CancellationTokenSource _cts = new();
-
-  protected override async Task OnInitializedAsync()
-  {
-    var rnd = new Random();
-
-    foreach (var s in Symbols)
+    private readonly string[] Symbols =
     {
-      var basePrice = s switch
-      {
-        var x when x.Contains("TSLA") => 250m,
-        var x when x.Contains("NVDA") => 900m,
-        var x when x.Contains("AMZN") => 180m,
-        var x when x.Contains("AAPL") => 180m,
-        var x when x.Contains("MSFT") => 420m,
-        var x when x.Contains("SPY")  => 510m,
-        var x when x.Contains("KO")   => 60m,
-        var x when x.Contains("DIS")  => 110m,
-        _ => 100m
-      };
+        "NASDAQ:TSLA","NASDAQ:AAPL","NASDAQ:MSFT","NASDAQ:NVDA",
+        "NASDAQ:AMZN","NYSE:SPY","NYSE:KO","NYSE:DIS"
+    };
 
-      Quotes[s] = new Quote { Price = basePrice, PrevPrice = basePrice };
+    private sealed class QuoteDto
+    {
+        public string Symbol { get; set; } = "";
+        public double Price { get; set; }
+        public double Change { get; set; }
+        public double ChangePercent { get; set; }
+        public bool IsUp { get; set; }
     }
 
-    //Lightweight mock “ticker” that nudges prices
-    _timer = new System.Threading.PeriodicTimer(TimeSpan.FromSeconds(6));
-    _ = Task.Run(async () =>
+    private readonly Dictionary<string, QuoteDto> Quotes = new();
+    private CancellationTokenSource? _cts;
+    private bool _started;
+    private string? _lastUpdated = "(none yet)";
+    private string? _lastError;
+
+    // diagnostics
+    private int _clicks;
+    private string _lastClick = "(never)";
+    private string _lastInterop = "(never)";
+    private string _lastJsReady = "(unknown)";
+    private int _lastJsonLen;
+
+    private IEnumerable<string> FilteredSymbols =>
+        string.IsNullOrWhiteSpace(search)
+            ? Symbols
+            : Symbols.Where(s => s.Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnInitialized()
     {
-      while (await _timer.WaitForNextTickAsync(_cts.Token))
-      {
-        foreach (var kvp in Quotes.ToList())
+        foreach (var s in Symbols)
+            Quotes[s] = new QuoteDto { Symbol = s, Price = 0, Change = 0, ChangePercent = 0, IsUp = true };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _started) return;
+        _started = true;
+
+        _cts = new CancellationTokenSource();
+        _ = RefreshLoop(_cts.Token);
+        await Task.CompletedTask;
+    }
+
+    private async Task<T> JsOnUiAsync<T>(string identifier, params object[] args)
+    {
+        T? result = default;
+        await InvokeAsync(async () =>
         {
-          var q = kvp.Value;
-          q.PrevPrice = q.Price;
+            result = await JS.InvokeAsync<T>(identifier, args).AsTask();
+        });
+        return result!;
+    }
 
-          // Random walk: +/- up to ~1% each tick
-          var deltaPct = (decimal)(rnd.NextDouble() - 0.5) * 0.02m;
-          var next = q.Price * (1m + deltaPct);
+    private async Task<bool> WaitForTradingViewReady(CancellationToken token)
+    {
+        var start = DateTime.UtcNow;
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                var ready = await JsOnUiAsync<bool>("tradingViewReady");
+                if (ready) return true;
+            }
+            catch { }
 
-          q.Price = Math.Max(1m, decimal.Round(next, 2));
+            if (DateTime.UtcNow - start > TimeSpan.FromSeconds(10))
+            {
+                _lastError = "tradingViewReady() never returned true. Ensure tradingView.js is included BEFORE blazor.server.js.";
+                await InvokeAsync(StateHasChanged);
+                return false;
+            }
+
+            try { await Task.Delay(300, token); } catch { }
+        }
+        return false;
+    }
+
+    private async Task RefreshLoop(CancellationToken token)
+    {
+        if (!await WaitForTradingViewReady(token))
+            return;
+
+        var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(4));
+
+        while (!token.IsCancellationRequested)
+        {
+            await RefreshOnceInternal(opts);
+
+            try
+            {
+                var ticked = await timer.WaitForNextTickAsync(token);
+                if (!ticked) break;
+            }
+            catch (OperationCanceledException) { break; }
+        }
+    }
+
+    private async Task RefreshOnce()
+    {
+        _clicks++;
+        _lastClick = DateTime.Now.ToLongTimeString();
+        var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        await RefreshOnceInternal(opts);
+    }
+
+    private async Task RefreshOnceInternal(JsonSerializerOptions opts)
+    {
+        try
+        {
+            _lastInterop = "calling getQuotesJson @ " + DateTime.Now.ToLongTimeString();
+
+            var json = await JsOnUiAsync<string>("tradingView.getQuotesJson", Symbols);
+
+            _lastJsonLen = json?.Length ?? 0;
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                _lastError = "Empty JSON from getQuotesJson.";
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var arr = JsonSerializer.Deserialize<QuoteDto[]>(json, opts);
+            if (arr is null)
+            {
+                _lastError = "Deserialized array is null.";
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            foreach (var q in arr)
+            {
+                if (!string.IsNullOrWhiteSpace(q.Symbol))
+                    Quotes[q.Symbol] = q;
+            }
+
+            _lastUpdated = DateTime.Now.ToLongTimeString();
+            _lastError = null;
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (JSException jse)
+        {
+            _lastError = "JSInterop error: " + jse.Message;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _lastError = "Loop error: " + ex.Message;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task CheckJsReady()
+    {
+        try
+        {
+            var ready = await JsOnUiAsync<bool>("tradingViewReady");
+            _lastJsReady = ready ? "true" : "false";
+        }
+        catch (Exception ex)
+        {
+            _lastJsReady = "error: " + ex.Message;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task BumpTsla()
+    {
+        _clicks++;
+        _lastClick = DateTime.Now.ToLongTimeString();
+
+        if (Quotes.TryGetValue("NASDAQ:TSLA", out var q))
+        {
+            var prev = q.Price;
+            q.Price = Math.Round(prev + 1.0, 2);
+            q.Change = Math.Round(q.Price - prev, 2);
+            q.ChangePercent = prev == 0 ? 0 : Math.Round((q.Change / prev) * 100.0, 2);
+            q.IsUp = q.Change >= 0;
+            _lastUpdated = DateTime.Now.ToLongTimeString();
+        }
+        else
+        {
+            Quotes["NASDAQ:TSLA"] = new QuoteDto
+            {
+                Symbol = "NASDAQ:TSLA",
+                Price = 1,
+                Change = 1,
+                ChangePercent = 100,
+                IsUp = true
+            };
+            _lastUpdated = DateTime.Now.ToLongTimeString();
         }
 
         await InvokeAsync(StateHasChanged);
-      }
-    });
-  }
+    }
 
-  public void Dispose()
-  {
-    _cts.Cancel();
-    _timer?.Dispose();
-  }
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
 
-  private void Select(string s) => Selected = s;
+    private void Select(string s) => Selected = s;
 }
