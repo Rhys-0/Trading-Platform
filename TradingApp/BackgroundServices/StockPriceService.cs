@@ -73,7 +73,14 @@ namespace TradingApp.BackgroundServices {
                         message.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
                     }
 
-                    _logger.LogInformation("Received: {Message}", message);
+                    // parse to json and update
+                    using JsonDocument doc = JsonDocument.Parse(message.ToString());
+
+                    decimal price = doc.RootElement.GetProperty("data")[0].GetProperty("p").GetDecimal();
+                    string? symbol = doc.RootElement.GetProperty("data")[0].GetProperty("s").GetString();
+
+                    _logger.LogInformation("Recieved price update: {Symbol} ${Price}", symbol, price);
+                    _stocks.StockList[symbol!].Price = price;
                 }
             }
             _logger.LogError("StockPriceService is stopping");
