@@ -1,15 +1,18 @@
-﻿namespace TradingApp.Models {
-    internal class Stocks {
-        internal Dictionary<string, Stock> StockList { get; }
+﻿using System.Collections.Concurrent;
 
-        public Stocks() {
-            StockList = new Dictionary<string, Stock> {
-                { "AAPL", new Stock("AAPL", "Apple Inc.", 0.00m) },
-                { "GOOGL", new Stock("GOOGL", "Alphabet Inc.", 0.00m) },
-                { "MSFT", new Stock("MSFT", "Microsoft Corporation", 0.00m) },
-                { "AMZN", new Stock("AMZN", "Amazon.com, Inc.", 0.00m) },
-                { "TSLA", new Stock("TSLA", "Tesla, Inc.", 0.00m) }
-            };
-        }
-    }
+namespace TradingApp.Models;
+
+internal class Stocks
+{
+    public ConcurrentDictionary<string, Stock> StockPrices { get; } = new()
+    {
+        ["AAPL"] = new Stock { Symbol = "AAPL", Name = "Apple Inc.", Price = 0 },
+        ["GOOGL"] = new Stock { Symbol = "GOOGL", Name = "Alphabet Inc.", Price = 0 },
+        ["MSFT"] = new Stock { Symbol = "MSFT", Name = "Microsoft Corporation", Price = 0 },
+        ["AMZN"] = new Stock { Symbol = "AMZN", Name = "Amazon.com Inc.", Price = 0 },
+        ["TSLA"] = new Stock { Symbol = "TSLA", Name = "Tesla Inc.", Price = 0 }
+    };
+
+    // backward compatibility
+    public ConcurrentDictionary<string, Stock> StockList => StockPrices;
 }
