@@ -1,5 +1,5 @@
 ﻿namespace TradingApp.Models.Interfaces {
-    internal interface IPosition {
+    public interface IPosition {
         int PositionId { get; }
         string StockSymbol { get; }
         int TotalQuantity { get; set; }

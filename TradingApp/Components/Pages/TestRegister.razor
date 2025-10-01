@@ -1,0 +1,72 @@
+@page "/test-register"
+@rendermode InteractiveServer
+
+<PageTitle>Test Registration</PageTitle>
+
+<div style="padding: 20px; max-width: 400px; margin: 0 auto;">
+    <h2>Simple Registration Test</h2>
+    
+    <EditForm Model="_model" OnValidSubmit="HandleSubmit" FormName="TestForm">
+        <DataAnnotationsValidator />
+        
+        <div style="margin-bottom: 15px;">
+            <label>First Name:</label>
+            <InputText @bind-Value="_model.FirstName" placeholder="Enter first name" />
+            <ValidationMessage For="@(() => _model.FirstName)" />
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label>Email:</label>
+            <InputText @bind-Value="_model.Email" placeholder="Enter email" />
+            <ValidationMessage For="@(() => _model.Email)" />
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label>
+                <InputCheckbox @bind-Value="_model.AgreeToTerms" />
+                I agree to terms
+            </label>
+            <ValidationMessage For="@(() => _model.AgreeToTerms)" />
+        </div>
+        
+        <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px;">
+            Test Submit
+        </button>
+    </EditForm>
+    
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div style="margin-top: 15px; padding: 10px; background: @(_isSuccess ? "#d4edda" : "#f8d7da"); color: @(_isSuccess ? "#155724" : "#721c24"); border-radius: 4px;">
+            @_message
+        </div>
+    }
+</div>
+
+@code {
+    private TestModel _model = new();
+    private string _message = "";
+    private bool _isSuccess = false;
+    
+    private async Task HandleSubmit()
+    {
+        Console.WriteLine($"🔍 TEST: Form submitted!");
+        Console.WriteLine($"🔍 TEST: FirstName: '{_model.FirstName}', Email: '{_model.Email}', Terms: {_model.AgreeToTerms}");
+        
+        _message = $"Form submitted successfully! FirstName: {_model.FirstName}, Email: {_model.Email}, Terms: {_model.AgreeToTerms}";
+        _isSuccess = true;
+        
+        await Task.Delay(100);
+    }
+    
+    private class TestModel
+    {
+        [Required]
+        public string FirstName { get; set; } = "";
+        
+        [Required, EmailAddress]
+        public string Email { get; set; } = "";
+        
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to terms")]
+        public bool AgreeToTerms { get; set; }
+    }
+}

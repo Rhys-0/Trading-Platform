@@ -1,5 +1,5 @@
 ﻿namespace TradingApp.Models.Interfaces {
-    internal interface ITrade {
+    public interface ITrade {
         int TradeId { get; }
         string TradeType { get; } // BUY or SELL
         string StockSymbol { get; }

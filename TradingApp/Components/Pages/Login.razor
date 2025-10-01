@@ -31,12 +31,12 @@
                 </div>
             }
 
-            <EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+            <EditForm Model="_model" OnValidSubmit="HandleValidSubmit" FormName="LoginForm">
                 <DataAnnotationsValidator />
                 
                 <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <InputText id="email" class="form-control" placeholder="Enter your email" @bind-Value="_model.Email" />
+                    <label for="email">Email or Username</label>
+                    <InputText id="email" class="form-control" placeholder="Enter your email or username" @bind-Value="_model.Email" />
                     <ValidationMessage For="@(() => _model.Email)" />
                 </div>
 
@@ -250,7 +250,7 @@
     private bool _isSubmitting = false;
     private string? _errorMessage;
 
-    [Inject] private TradingApp.Data.Interfaces.ILoginManager LoginManager { get; set; } = default!;
+    [Inject] private TradingApp.Data.Interfaces.IAuthenticationService AuthService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private void ClearError() {
@@ -262,16 +262,15 @@
         _isSubmitting = true;
         
         try {
-            string passwordHash = TradingApp.Data.PasswordHasher.ComputeSha256Hash(_model.Password);
-            var user = await LoginManager.RetrieveUser(_model.Email, passwordHash);
+            bool success = await AuthService.LoginAsync(_model.Email, _model.Password);
             
-            if (user is null) {
-                _errorMessage = "The email or password you entered is incorrect. Please verify your credentials and try again.";
+            if (!success) {
+                _errorMessage = "The email/username or password you entered is incorrect. Please verify your credentials and try again.";
                 return;
             }
             
-            // Login successful - navigate to home
-            Nav.NavigateTo("/");
+            // Login successful - navigate to dashboard
+            Nav.NavigateTo("/dashboard");
         } catch (Exception ex) {
             _errorMessage = "An unexpected error occurred. Please try again.";
             Console.WriteLine($"Login error: {ex.Message}");
@@ -281,7 +280,7 @@
     }
 
     private sealed class LoginModel {
-        [Required, EmailAddress]
+        [Required]
         public string Email { get; set; } = string.Empty;
 
         [Required]

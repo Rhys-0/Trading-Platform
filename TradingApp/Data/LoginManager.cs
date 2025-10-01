@@ -27,6 +27,30 @@ namespace TradingApp.Data {
         }
 
         /// <summary>
+        /// Return the a user object given the username and hashed password of a user, used to validate user logins.
+        /// </summary>
+        /// <param name="username">The username of the user</param>
+        /// <param name="hashedPassword">The password of the user</param>
+        /// <returns>A User object containing all the information from the user table in the database,
+        /// if no user with the given username and password is found, the function returns null.</returns>
+        public async Task<User?> RetrieveUserByUsername(string username, string hashedPassword) {
+            using var connection = await _connection.CreateConnectionAsync();
+            return await connection.QueryFirstOrDefaultAsync<User>(
+                "SELECT user_id, username, email, first_name, last_name, starting_cash_balance, current_cash_balance " +
+                "FROM users " +
+                "WHERE username = @Username and password_hash = @HashedPassword",
+                new { Username = username, HashedPassword = hashedPassword });
+        }
+
+        /// <summary>
+        /// Get a database connection for external use.
+        /// </summary>
+        /// <returns>A database connection</returns>
+        public async Task<NpgsqlConnection> GetConnectionAsync() {
+            return (NpgsqlConnection)await _connection.CreateConnectionAsync();
+        }
+
+        /// <summary>
         /// Add a user to the database, typically on the registration page.
         /// </summary>
         /// <param name="username">The username of the user</param>

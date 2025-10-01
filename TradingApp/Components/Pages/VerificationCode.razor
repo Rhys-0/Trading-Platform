@@ -1,0 +1,428 @@
+@page "/verification-code"
+@layout Layout.EmptyLayout
+
+<PageTitle>Verification Code - TradingApp</PageTitle>
+
+<div class="verification-container">
+    <div class="branding-section">
+        <div class="branding-content">
+            <div class="logo-container">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <h1>Verify Your Identity</h1>
+            <p>Enter the 6-digit verification code</p>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-container">
+            <div class="verification-info">
+                <h2>Check Your Email</h2>
+                <p>We've sent a 6-digit verification code to:</p>
+                
+                <div class="email-display">
+                    <div class="email-label">Email Address:</div>
+                    <div class="email-address">@_userEmail</div>
+                    <small class="email-note">Please check your email and enter the verification code below</small>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage)) {
+                <div class="error-banner">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div class="error-content">
+                        <h4>Verification Failed</h4>
+                        <p>@_errorMessage</p>
+                    </div>
+                    <button class="close-btn" @onclick="ClearError">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            }
+
+            <EditForm Model="_model" OnValidSubmit="HandleValidSubmit" FormName="VerificationForm">
+                <DataAnnotationsValidator />
+                
+                <div class="form-group">
+                    <label for="verificationCode">6-Digit Verification Code</label>
+                    <InputText id="verificationCode" 
+                               class="form-control verification-input" 
+                               placeholder="Enter 6-digit code" 
+                               maxlength="6"
+                               @bind-Value="_model.VerificationCode" />
+                    <ValidationMessage For="@(() => _model.VerificationCode)" />
+                </div>
+
+                <button class="btn btn-primary verify-btn" type="submit" disabled="@_isSubmitting">
+                    @if (_isSubmitting) {
+                        <span>Verifying...</span>
+                    } else {
+                        <span>Verify & Complete Registration</span>
+                    }
+                </button>
+                
+                <div style="margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" @onclick="DebugForm">
+                        Debug Form (Check Console)
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="help-section">
+                <p><strong>Can't find your code?</strong></p>
+                <button class="btn btn-outline-secondary" @onclick="ResendCode">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Resend Code
+                </button>
+            </div>
+
+            <div class="back-link">
+                <a href="/register">
+                    <i class="bi bi-arrow-left"></i>
+                    Back to Registration
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.verification-container {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.branding-section {
+    flex: 1;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.branding-content {
+    text-align: center;
+}
+
+.logo-container {
+    margin-bottom: 2rem;
+}
+
+.logo-container i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.branding-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.branding-content p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.form-section {
+    flex: 1;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.verification-info h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.verification-info p {
+    color: #718096;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.email-display {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.email-label {
+    color: #4a5568;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.email-address {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.email-note {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.error-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.error-banner i {
+    color: #dc2626;
+    font-size: 1.2rem;
+}
+
+.error-content h4 {
+    color: #dc2626;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.error-content p {
+    color: #dc2626;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #dc2626;
+    cursor: pointer;
+    padding: 0.25rem;
+    margin-left: auto;
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #374151;
+    font-weight: 600;
+}
+
+.verification-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-size: 1.5rem;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5rem;
+    font-weight: 600;
+}
+
+.verification-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.verify-btn {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 0.75rem;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 2rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.verify-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.verify-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.help-section {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+}
+
+.help-section p {
+    margin-bottom: 1rem;
+    color: #4a5568;
+}
+
+.back-link {
+    text-align: center;
+}
+
+.back-link a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s;
+}
+
+.back-link a:hover {
+    color: #5a67d8;
+    text-decoration: underline;
+}
+
+@@media (max-width: 768px) {
+    .verification-container {
+        flex-direction: column;
+    }
+    
+    .branding-section {
+        padding: 2rem 1rem;
+    }
+    
+    .branding-content h1 {
+        font-size: 2rem;
+    }
+    
+    .form-section {
+        padding: 1.5rem 1rem;
+    }
+    
+    .code-number {
+        font-size: 2rem;
+        letter-spacing: 0.25rem;
+    }
+}
+</style>
+
+@code {
+    private VerificationModel _model = new();
+    private bool _isSubmitting = false;
+    private string? _errorMessage;
+    private string _userEmail = "";
+    private string _userFirstName = "";
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private TradingApp.Data.Interfaces.IVerificationService VerificationService { get; set; } = default!;
+
+    protected override void OnInitialized() {
+        // Since verification is removed, redirect to register
+        Nav.NavigateTo("/register");
+        return;
+        
+        if (string.IsNullOrEmpty(_userEmail)) {
+            // If no email found, redirect back to registration
+            Nav.NavigateTo("/register");
+        }
+    }
+
+    private void ClearError() {
+        _errorMessage = null;
+    }
+
+    private void DebugForm() {
+        Console.WriteLine($"🔍 DEBUG FORM: VerificationCode = '{_model.VerificationCode}'");
+        Console.WriteLine($"🔍 DEBUG FORM: Length = {_model.VerificationCode?.Length ?? 0}");
+        Console.WriteLine($"🔍 DEBUG FORM: IsNullOrEmpty = {string.IsNullOrEmpty(_model.VerificationCode)}");
+        Console.WriteLine($"🔍 DEBUG FORM: IsNullOrWhiteSpace = {string.IsNullOrWhiteSpace(_model.VerificationCode)}");
+        Console.WriteLine($"🔍 DEBUG FORM: UserEmail = '{_userEmail}'");
+        Console.WriteLine($"🔍 DEBUG FORM: Model object = {_model?.GetType().Name}");
+        Console.WriteLine($"🔍 DEBUG FORM: Form state - _isSubmitting: {_isSubmitting}");
+        Console.WriteLine($"🔍 DEBUG FORM: Error message: '{_errorMessage}'");
+    }
+
+    private async Task ResendCode() {
+        try {
+            var code = await VerificationService.GenerateAndSendVerificationCodeAsync(_userEmail, _userFirstName);
+            if (!string.IsNullOrEmpty(code)) {
+                _errorMessage = null;
+                // You could show a success message here
+            } else {
+                _errorMessage = "Failed to resend verification code. Please try again.";
+            }
+        } catch (Exception) {
+            _errorMessage = "Failed to resend verification code. Please try again.";
+        }
+    }
+
+
+    private async Task HandleValidSubmit() {
+        _errorMessage = null;
+        _isSubmitting = true;
+        
+        Console.WriteLine($"🔍 VERIFICATION DEBUG: Starting verification for {_userEmail}");
+        Console.WriteLine($"🔍 VERIFICATION DEBUG: Code entered: '{_model.VerificationCode}'");
+        Console.WriteLine($"🔍 VERIFICATION DEBUG: Code length: {_model.VerificationCode?.Length ?? 0}");
+        
+        // Manual validation check
+        if (string.IsNullOrWhiteSpace(_model.VerificationCode)) {
+            _errorMessage = "Please enter the verification code.";
+            _isSubmitting = false;
+            Console.WriteLine($"🔍 VERIFICATION DEBUG: Empty code provided");
+            return;
+        }
+        
+        try {
+            // Verify the code using the verification service
+            bool isValid = await VerificationService.VerifyCodeAsync(_userEmail, _model.VerificationCode);
+            
+            Console.WriteLine($"🔍 VERIFICATION DEBUG: Verification result: {isValid}");
+            
+            if (!isValid) {
+                _errorMessage = "Invalid verification code. Please check the code and try again.";
+                Console.WriteLine($"🔍 VERIFICATION DEBUG: Verification failed - showing error");
+                return;
+            }
+
+            Console.WriteLine($"🔍 VERIFICATION DEBUG: Verification successful - redirecting to dashboard");
+            // Verification successful - navigate to dashboard
+            await Task.Delay(500); // Small delay for UX
+            Nav.NavigateTo("/dashboard");
+        } catch (Exception ex) {
+            Console.WriteLine($"🔍 VERIFICATION DEBUG: Exception occurred: {ex.Message}");
+            _errorMessage = "An unexpected error occurred. Please try again.";
+        } finally {
+            _isSubmitting = false;
+            Console.WriteLine($"🔍 VERIFICATION DEBUG: Verification process completed");
+        }
+    }
+
+    private sealed class VerificationModel {
+        public string VerificationCode { get; set; } = string.Empty;
+    }
+}

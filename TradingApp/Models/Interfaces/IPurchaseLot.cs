@@ -1,5 +1,5 @@
 ﻿namespace TradingApp.Models.Interfaces {
-    internal interface IPurchaseLot {
+    public interface IPurchaseLot {
         int PurchaseLotId { get; }
         int Quantity { get; set; }
         decimal PurchasePrice { get; }

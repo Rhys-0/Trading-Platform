@@ -1,5 +1,5 @@
 ﻿namespace TradingApp.Models.Interfaces {
-    internal interface IUser {
+    public interface IUser {
         int Id { get; }
         string Username { get; } // No set needed unless users being able to change their username is implemented
         string Email { get; } // No set needed unless users being able to change their emails is implemented

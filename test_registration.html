@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registration Test</title>
+</head>
+<body>
+    <h1>Testing Registration Form</h1>
+    <p>Open the browser console to see the debug output, then fill out the form below:</p>
+    
+    <form action="http://localhost:5165/register" method="post">
+        <div>
+            <label>First Name:</label>
+            <input type="text" name="FirstName" value="John" required>
+        </div>
+        <div>
+            <label>Last Name:</label>
+            <input type="text" name="LastName" value="Doe" required>
+        </div>
+        <div>
+            <label>Username:</label>
+            <input type="text" name="Username" value="johndoe123" required>
+        </div>
+        <div>
+            <label>Email:</label>
+            <input type="email" name="Email" value="john.doe@example.com" required>
+        </div>
+        <div>
+            <label>Password:</label>
+            <input type="password" name="Password" value="password123" required>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" name="AgreeToTerms" value="true" checked>
+                I agree to the Terms & Conditions
+            </label>
+        </div>
+        <button type="submit">Create Account</button>
+    </form>
+    
+    <script>
+        console.log("🔍 TEST: Registration test page loaded");
+        console.log("🔍 TEST: Go to http://localhost:5165/register to test the actual form");
+    </script>
+</body>
+</html>

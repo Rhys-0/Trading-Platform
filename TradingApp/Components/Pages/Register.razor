@@ -1,4 +1,5 @@
-﻿@page "/register"
+@page "/register"
+@rendermode InteractiveServer
 @layout Layout.EmptyLayout
 
 <PageTitle>Register - TradingApp</PageTitle>
@@ -61,7 +62,7 @@
                 <p>Join thousands of successful traders</p>
             </div>
 
-            <EditForm Model="_model" OnValidSubmit="HandleValidSubmit" class="login-form">
+            <EditForm Model="_model" OnValidSubmit="HandleValidSubmit" FormName="RegisterForm" class="login-form">
                 <DataAnnotationsValidator />
                 
                 <div class="form-row">
@@ -97,10 +98,11 @@
 
                 <div class="form-options">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="termsAccepted">
+                        <InputCheckbox id="termsAccepted" class="form-check-input" @bind-Value="_model.AgreeToTerms" />
                         <label class="form-check-label" for="termsAccepted">
                             I agree to the <a href="#" class="terms-link">Terms & Conditions</a>
                         </label>
+                        <ValidationMessage For="@(() => _model.AgreeToTerms)" />
                     </div>
                 </div>
 
@@ -330,6 +332,12 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
+.signin-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 .divider {
     text-align: center;
     margin: 2rem 0;
@@ -395,6 +403,25 @@
     text-decoration: underline;
 }
 
+.alert {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
 @@media (max-width: 768px) {
     .login-container {
         flex-direction: column;
@@ -424,50 +451,65 @@
 </style>
 
 @code {
-	private RegisterModel _model = new();
-	private bool _isSubmitting = false;
-	private string? _errorMessage;
-	private string? _successMessage;
+    private RegisterModel _model = new();
+    private bool _isSubmitting = false;
+    private string? _errorMessage;
+    private string? _successMessage;
 
-	[Inject] private TradingApp.Data.Interfaces.ILoginManager LoginManager { get; set; } = default!;
-	[Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private TradingApp.Data.Interfaces.IAuthenticationService AuthService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
 
-	private async Task HandleValidSubmit() {
-		_errorMessage = null;
-		_successMessage = null;
-		_isSubmitting = true;
-		try {
-			string passwordHash = TradingApp.Data.PasswordHasher.ComputeSha256Hash(_model.Password);
-			bool added = await LoginManager.AddUser(_model.Username, _model.Email, passwordHash, _model.FirstName, _model.LastName);
-			if (!added) {
-				_errorMessage = "Registration failed. Please try again.";
-				return;
-			}
-			_successMessage = "Registration successful! Redirecting to profile setup...";
-			await Task.Delay(1500);
-			Nav.NavigateTo("/personal-info");
-		} catch (Exception) {
-			_errorMessage = "An unexpected error occurred. Please try again.";
-		} finally {
-			_isSubmitting = false;
-		}
-	}
+    private async Task HandleValidSubmit() {
+        _errorMessage = null;
+        _successMessage = null;
+        _isSubmitting = true;
+        
+        Console.WriteLine($"🔍 REGISTRATION DEBUG: Starting registration for {_model.FirstName} {_model.LastName}");
+        Console.WriteLine($"🔍 REGISTRATION DEBUG: Username: {_model.Username}, Email: {_model.Email}");
+        Console.WriteLine($"🔍 REGISTRATION DEBUG: Terms accepted: {_model.AgreeToTerms}");
+        
+        try {
+            bool success = await AuthService.RegisterAsync(_model.Username, _model.Email, _model.Password, _model.FirstName, _model.LastName);
+            Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration result: {success}");
+            
+            if (!success) {
+                _errorMessage = "Registration failed. The username or email may already be in use. Please try again.";
+                Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration failed - showing error message");
+                return;
+            }
+            
+            Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration successful - redirecting to dashboard");
+            
+            // Redirect directly to dashboard
+            Nav.NavigateTo("/dashboard");
+        } catch (Exception ex) {
+            Console.WriteLine($"🔍 REGISTRATION DEBUG: Exception occurred: {ex.Message}");
+            _errorMessage = "An unexpected error occurred. Please try again.";
+        } finally {
+            _isSubmitting = false;
+            Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration process completed");
+        }
+    }
 
-	private sealed class RegisterModel {
-		[Required]
-		public string FirstName { get; set; } = string.Empty;
+    private sealed class RegisterModel {
+        [Required]
+        public string FirstName { get; set; } = string.Empty;
 
-		[Required]
-		public string LastName { get; set; } = string.Empty;
+        [Required]
+        public string LastName { get; set; } = string.Empty;
 
-		[Required]
-		public string Username { get; set; } = string.Empty;
+        [Required]
+        public string Username { get; set; } = string.Empty;
 
-		[Required, EmailAddress]
-		public string Email { get; set; } = string.Empty;
+        [Required, EmailAddress]
+        public string Email { get; set; } = string.Empty;
 
-		[Required]
-		[MinLength(6)]
-		public string Password { get; set; } = string.Empty;
-	}
+        [Required]
+        [MinLength(6)]
+        public string Password { get; set; } = string.Empty;
+
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the Terms & Conditions")]
+        public bool AgreeToTerms { get; set; }
+    }
+
 }

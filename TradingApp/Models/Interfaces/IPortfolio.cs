@@ -1,5 +1,5 @@
 ﻿namespace TradingApp.Models.Interfaces {
-    internal interface IPortfolio {
+    public interface IPortfolio {
         int PortfolioId { get; }
         decimal Value { get; set; }
         decimal NetProfit { get; set; }
