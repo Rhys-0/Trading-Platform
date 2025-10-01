@@ -1,7 +1,6 @@
 trigger:
 - main
 - pipeline-dev
-- stock-news
 - database-dev
 - stock-news
 - order-page
