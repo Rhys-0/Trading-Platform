@@ -1,6 +1,10 @@
+using Microsoft.Extensions.Hosting;
+using TradingApp.BackgroundServices;
+using TradingApp.Components;
 using TradingApp.Data;
 using TradingApp.Data.Interfaces;
-using TradingApp.Components;
+using TradingApp.Models;
+using TradingApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +12,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Singletons
 builder.Services.AddSingleton<DatabaseConnection>();
+builder.Services.AddSingleton<NewsService>();
+builder.Services.AddSingleton<Stocks>();
 
-// Database manager methods
+// Scoped classes
 builder.Services.AddScoped<ILoginManager, LoginManager>();
+builder.Services.AddScoped<UserManager>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<PortfolioService>();
+
+// Background Services
+builder.Services.AddHostedService<StockPriceService>();
 
 // Authentication service
 builder.Services.AddScoped<TradingApp.Data.Interfaces.IAuthenticationService, TradingApp.Data.AuthenticationService>();

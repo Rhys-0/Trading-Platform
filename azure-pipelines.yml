@@ -1,21 +1,28 @@
 trigger:
 - main
 - pipeline-dev
+- database-dev
+- stock-news
+- order-page
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 variables:
   buildConfiguration: 'Release'
   dotnetVersion: '9.0.200'
   projectPath: 'TradingApp/TradingApp.csproj'
-  testProjects: '**/*Tests.csproj' 
+  testProjects: 'TradingApp.Tests/TradingApp.Tests.csproj' 
   publishDir: '$(Build.ArtifactStagingDirectory)/publish'
+  runSettingsFile: '$(Build.SourcesDirectory)/coverlet.runsettings'
 
 steps:
 - checkout: self
-  fetchDepth: 0  # Fetch full history
+  fetchDepth: 0
   persistCredentials: true
+
+- script: docker pull postgres:15-alpine
+  displayName: 'Download Postgres Image'
 
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
@@ -27,37 +34,28 @@ steps:
   displayName: 'Restore NuGet packages'
   inputs:
     command: 'restore'
-    projects: '$(projectPath)'
-
-# Prepare sonarcloud analysis
-- task: SonarCloudPrepare@3
-  displayName: 'Prepare SonarCloud analysis'
-  inputs:
-    SonarCloud: 'SonarQube-Connection'
-    organization: 'rhys-0'
-    scannerMode: 'dotnet'
-    projectKey: 'Rhys-0_Trading-Platform'
+    projects: '**/*.sln'
 
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
     command: 'build'
-    projects: '$(projectPath)'
+    projects: '**/*.sln'
     arguments: '--configuration $(buildConfiguration)'
 
-- task: SonarCloudAnalyze@3
-  displayName: 'Run SonarCloud analysis'
-
 - task: DotNetCoreCLI@2
-  displayName: 'Run Tests'
+  displayName: 'Run Tests with Coverage'
   inputs:
     command: 'test'
     projects: '$(testProjects)'
-    arguments: '--configuration $(buildConfiguration) --no-build --logger trx'
+    arguments: >
+      --configuration $(buildConfiguration)
+      --no-build
+      --settings $(runSettingsFile)
 
-- task: PublishTestResults@2
-  displayName: 'Publish Test Results'
+- task: PublishCodeCoverageResults@2
+  displayName: 'Publish code coverage'
   inputs:
-    testResultsFiles: '**/*.trx'
-    testRunTitle: 'Unit Tests'
-
+    codeCoverageTool: 'OpenCover'
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
+    reportDirectory: '$(Agent.TempDirectory)'

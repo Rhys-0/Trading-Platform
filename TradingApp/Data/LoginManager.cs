@@ -20,7 +20,13 @@ namespace TradingApp.Data {
         public async Task<User?> RetrieveUser(string email, string hashedPassword) {
             using var connection = await _connection.CreateConnectionAsync();
             return await connection.QueryFirstOrDefaultAsync<User>(
-                "SELECT user_id, username, email, first_name, last_name, starting_cash_balance, current_cash_balance " +
+                "SELECT user_id AS id, " +
+                "username, " +
+                "email, " +
+                "first_name AS firstName, " +
+                "last_name AS lastName, " +
+                "starting_cash_balance AS startingCashBalance, " +
+                "current_cash_balance AS currentCashBalance " +
                 "FROM users " +
                 "WHERE email = @Email and password_hash = @HashedPassword",
                 new { Email = email, HashedPassword = hashedPassword });
@@ -63,18 +69,46 @@ namespace TradingApp.Data {
             decimal startingCash = 10_000.00m;
 
             using var connection = await _connection.CreateConnectionAsync();
-            int rowsAffected = await connection.ExecuteAsync(
+            int rowsAffected = 0;
+            try {
+                rowsAffected = await connection.ExecuteAsync(
                 "INSERT into users" +
                 "(username, email, password_hash, first_name, last_name, starting_cash_balance, current_cash_balance) values" +
                 "(@Username, @Email, @PasswordHash, @FirstName, @LastName, @StartingCashBalance, @CurrentCashBalance)",
-                new {Username = username, 
+                new {
+                    Username = username,
                     Email = email,
-                    PasswordHash = passwordHash, 
+                    PasswordHash = passwordHash,
                     FirstName = firstName,
-                    LastName = lastName, 
-                    StartingCashBalance = startingCash, 
-                    CurrentCashBalance = startingCash}
+                    LastName = lastName,
+                    StartingCashBalance = startingCash,
+                    CurrentCashBalance = startingCash
+                }
                 );
+            } catch (PostgresException ex) when (ex.SqlState == "23505") {
+                // email already exists
+                return false;
+            }
+
+            if (rowsAffected != 1) return false;
+
+            // Create the user's portfolio
+            var userId = await connection.QuerySingleAsync<long>(
+                "SELECT user_id FROM users WHERE email = @Email",
+                new { Email = email });
+
+            rowsAffected = await connection.ExecuteAsync(
+                "INSERT INTO portfolio " +
+                "(user_id, value, net_profit, percentage_return) " +
+                "VALUES " +
+                "(@UserId, @Value, @NetProfit, @PercentageReturn)",
+                new {
+                    UserId = userId,
+                    Value = 0.00m,
+                    NetProfit = 0.00m,
+                    PercentageReturn = 0.00m
+                }
+            );
 
             return (rowsAffected == 1);
         }

@@ -1,0 +1,40 @@
+@page "/news"
+@using TradingApp.Components 
+@using TradingApp.Data
+@inject NewsService NewsService
+
+<PageTitle>Stock Market News</PageTitle>
+
+<div class="container mt-4">
+    <h2>📈 Stock Market News</h2>
+    <p class="text-muted">Latest updates and financial headlines</p>
+
+    @if (newsArticles == null)
+    {
+        <p>Loading news...</p>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var article in newsArticles)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <NewsCard Title="@article.Title"
+                              Description="@article.Description"
+                              Url="@article.Url"
+                              PublishedAt="@article.PublishedAt"
+                              Source="@article.Source" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<NewsArticle>? newsArticles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        newsArticles = await NewsService.GetLatestNews();
+    }
+}

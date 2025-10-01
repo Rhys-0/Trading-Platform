@@ -1,7 +1,8 @@
-﻿using TradingApp.Models.Interfaces;
+﻿using System.Linq.Expressions;
+
 
 namespace TradingApp.Models {
-    public class User : IUser {
+    public class User {
         public int Id { get; }
         public string Username { get; } // No set needed unless users being able to change their username is implemented
         public string Email { get; } // No set needed unless users being able to change their emails is implemented
@@ -9,10 +10,12 @@ namespace TradingApp.Models {
         public string LastName { get; }
         public decimal StartingCashBalance { get; }
         public decimal CurrentCashBalance { get; private set; }
-        public IPortfolio? Portfolio { get; private set; }
-        public List<ITrade>? Trades { get; set; }
+        public Portfolio? Portfolio { get; set; }
+        public List<Trade>? Trades { get; set; }
 
-        internal User(int id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
+        public User(int id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
+            ArgumentOutOfRangeException.ThrowIfNegative(startingCashBalance);
+            
             Id = id;
             Username = username;
             Email = email;
@@ -22,12 +25,34 @@ namespace TradingApp.Models {
             CurrentCashBalance = currentCashBalance;
         }
 
-        public void LoadTrades() {
-            throw new NotImplementedException();
+        
+
+        /// <summary>
+        /// Add cash to the users balance
+        /// </summary>
+        /// <param name="amount">The amount to be added to the user balance</param>
+        /// <returns>True if the cash was addedd successfully, false otherwise</returns>
+        public bool AddCash(decimal amount) {
+            if(amount <= 0) {
+                return false;
+            }
+
+            CurrentCashBalance += amount;
+            return true;
         }
 
-        public void LoadPortfolio() {
-            throw new NotImplementedException();
+        /// <summary>
+        /// Remove cash from the users balance
+        /// </summary>
+        /// <param name="amount">The amount to be removed from the user balance</param>
+        /// <returns>True if the cash was removed successfully, false if the operation is invalid</returns>
+        public bool RemoveCash(decimal amount) {
+            if(amount > CurrentCashBalance || amount < 0) {
+                return false;
+            }
+
+            CurrentCashBalance -= amount;
+            return true;
         }
     }
 }
