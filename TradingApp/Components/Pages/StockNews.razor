@@ -1,29 +1,40 @@
 @page "/news"
-@using TradingApp.Components 
 @using TradingApp.Data
 @inject NewsService NewsService
 
-<PageTitle>Stock Market News</PageTitle>
+<div class="news-container">
+    <div class="header-section">
+        <h1>Market News</h1>
+        <p class="lead">Stay informed with the latest market updates and financial news</p>
+    </div>
 
-<div class="container mt-4">
-    <h2>📈 Stock Market News</h2>
-    <p class="text-muted">Latest updates and financial headlines</p>
-
-    @if (newsArticles == null)
+    @if (articles == null)
     {
-        <p>Loading news...</p>
+        <div class="loading-container">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!articles.Any())
+    {
+        <div class="alert alert-custom">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            No news articles available at the moment. Please try again later.
+        </div>
     }
     else
     {
-        <div class="row">
-            @foreach (var article in newsArticles)
+        <div class="news-grid">
+            @foreach (var article in articles)
             {
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <NewsCard Title="@article.Title"
-                              Description="@article.Description"
-                              Url="@article.Url"
-                              PublishedAt="@article.PublishedAt"
-                              Source="@article.Source" />
+                <div class="news-item">
+                    <NewsCard 
+                        Title="@article.Title"
+                        Description="@article.Description"
+                        Url="@article.Url"
+                        Source="@article.Source"
+                        PublishedAt="@article.PublishedAt" />
                 </div>
             }
         </div>
@@ -31,10 +42,18 @@
 </div>
 
 @code {
-    private List<NewsArticle>? newsArticles;
+    private List<NewsArticle>? articles;
 
     protected override async Task OnInitializedAsync()
     {
-        newsArticles = await NewsService.GetLatestNews();
+        try
+        {
+            articles = await NewsService.GetMarketNewsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in StockNews: {ex.Message}");
+            articles = new List<NewsArticle>();
+        }
     }
 }

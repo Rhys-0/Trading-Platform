@@ -23,6 +23,10 @@ builder.Services.AddScoped<UserManager>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<PortfolioService>();
 
+// Register HttpClient for Stock News API calls
+builder.Services.AddHttpClient<NewsService>();
+builder.Services.AddScoped<NewsService>();
+
 // Background Services
 builder.Services.AddHostedService<StockPriceService>();
 
