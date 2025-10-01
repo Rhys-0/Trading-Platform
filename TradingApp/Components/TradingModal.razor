@@ -3,105 +3,79 @@
 @using Microsoft.JSInterop
 @inject IJSRuntime JS
 
-<div class="modal fade @(_isVisible ? "show" : "")" id="tradingModal" tabindex="-1" style="display: @(_isVisible ? "block" : "none")">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title">
-                    <i class="bi @(_tradeType == TradeType.Buy ? "bi-arrow-up-circle text-success" : "bi-arrow-down-circle text-danger")"></i>
-                    @_tradeType @_selectedStock?.Symbol
-                </h5>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
-            </div>
-            
-            <div class="modal-body">
-                @if (_selectedStock != null)
-                {
-                    <div class="row">
-                        <!-- Stock Info Panel -->
-                        <div class="col-md-6">
-                            <div class="card bg-secondary mb-3">
-                                <div class="card-header">
-                                    <h6 class="mb-0">@_selectedStock.Symbol - @_selectedStock.Name</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Current Price:</span>
-                                        <span class="fw-bold text-success">$@_selectedStock.Price.ToString("F2")</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Change:</span>
-                                        <span class="@(_selectedStock.Change >= 0 ? "text-success" : "text-danger")">
-                                            @(_selectedStock.Change >= 0 ? "+" : "")@_selectedStock.Change.ToString("F2") (@_selectedStock.ChangePercent.ToString("F2")%)
-                                        </span>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span>Available Balance:</span>
-                                        <span class="fw-bold">$@_availableBalance.ToString("F2")</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Trade Panel -->
-                        <div class="col-md-6">
-                            <div class="card bg-secondary">
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="form-label">Investment Amount ($)</label>
-                                        <input type="number" class="form-control bg-dark text-light border-secondary" 
-                                               @bind="_investmentAmount" @oninput="CalculateShares" 
-                                               placeholder="0.00" step="0.01" min="0" max="@_maxInvestment" />
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">Shares to @_tradeType.ToString().ToLower()</label>
-                                        <div class="input-group">
-                                            <input type="number" class="form-control bg-dark text-light border-secondary" 
-                                                   value="@_calculatedShares.ToString("F4")" readonly />
-                                            <span class="input-group-text bg-secondary text-light border-secondary">shares</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Estimated Total</label>
-                                        <div class="alert alert-info">
-                                            <strong>$@_estimatedTotal.ToString("F2")</strong>
-                                            <small class="d-block">+ fees if applicable</small>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" @bind="_confirmTrade" id="confirmTrade">
-                                            <label class="form-check-label" for="confirmTrade">
-                                                I confirm this @_tradeType.ToString().ToLower() order
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-
-            <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
-                <button type="button" class="btn @(_tradeType == TradeType.Buy ? "btn-success" : "btn-danger")" 
-                        @onclick="ExecuteTrade" disabled="@(!_confirmTrade || _investmentAmount <= 0)">
-                    <i class="bi @(_tradeType == TradeType.Buy ? "bi-cart-plus" : "bi-cart-dash")"></i>
-                    @_tradeType @_calculatedShares.ToString("F4") shares
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @if (_isVisible)
 {
-    <div class="modal-backdrop fade show"></div>
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+
+            @if (_selectedStock != null)
+            {
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <div class="header-info">
+                        <span class="trade-type-badge @(_tradeType.ToString().ToLower())">@_tradeType</span>
+                        <h3 class="stock-symbol">@_selectedStock.Symbol</h3>
+                        <p class="stock-name">@_selectedStock.Name</p>
+                    </div>
+                    <button class="close-button" @onclick="CloseModal" aria-label="Close modal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <div class="price-details">
+                        <div class="detail-item">
+                            <span class="label">Market Price</span>
+                            <span class="value">$@_selectedStock.Price.ToString("N2")</span>
+                        </div>
+                        <div class="detail-item text-right">
+                            <span class="label">24h Change</span>
+                            <span class="value @(_selectedStock.Change >= 0 ? "up" : "down")">
+                                @(_selectedStock.Change >= 0 ? "+" : "")@_selectedStock.Change.ToString("N2") (@_selectedStock.ChangePercent.ToString("N2")%)
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="investmentAmount">Amount</label>
+                        <div class="input-wrapper">
+                            <span class="adornment">$</span>
+                            <input id="investmentAmount" type="number" class="form-control"
+                                   @bind="_investmentAmount" @oninput="CalculateShares"
+                                   placeholder="0.00" step="0.01" min="0" max="@_maxInvestment" />
+                        </div>
+                    </div>
+
+                    <div class="summary-row">
+                        <div class="summary-item">
+                            <span class="label">Shares</span>
+                            <span class="value">≈ @_calculatedShares.ToString("N4")</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Available</span>
+                            <span class="value">$@_availableBalance.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <div class="confirmation-check">
+                        <input type="checkbox" id="confirmTrade" @bind="_confirmTrade" />
+                        <label for="confirmTrade">I confirm this order.</label>
+                    </div>
+                    <button class="execute-btn @(_tradeType.ToString().ToLower())"
+                            @onclick="ExecuteTrade"
+                            disabled="@(!_confirmTrade || _investmentAmount <= 0)">
+                        @_tradeType.ToString() Stock
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
 }
+
 
 @code {
     private bool _isVisible = false;
@@ -136,7 +110,7 @@
 
     private void CalculateShares(ChangeEventArgs e)
     {
-        if (decimal.TryParse(e.Value?.ToString(), out var amount) && _selectedStock != null)
+        if (decimal.TryParse(e.Value?.ToString(), out var amount) && _selectedStock != null && _selectedStock.Price > 0)
         {
             _investmentAmount = amount;
             _calculatedShares = amount / _selectedStock.Price;
@@ -176,7 +150,7 @@
 
     public class TradeConfirmation
     {
-        public Stock Stock { get; set; } = null!;
+        public required Stock Stock { get; set; }
         public TradeType TradeType { get; set; }
         public decimal Shares { get; set; }
         public decimal PricePerShare { get; set; }

@@ -2,52 +2,192 @@
     backdrop-filter: blur(5px);
 }
 
-.modal-content {
-    border: 1px solid #6c757d;
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, .5);
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    animation: fadeIn 150ms ease-out;
 }
 
-.card {
-    border: 1px solid #6c757d;
+.modal-content {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 420px;
+    animation: slideIn 250ms cubic-bezier(0.25, 1, 0.5, 1);
+    border: 1px solid #f0f0f0;
+}
+
+/* --- Header --- */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.header-info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    align-items: center;
+}
+
+.trade-type-badge {
+    grid-row: 1 / 3;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.trade-type-badge.buy { background-color: #e6f7ec; color: #15803d; }
+.trade-type-badge.sell { background-color: #fef2f2; color: #dc2626; }
+
+.stock-symbol {
+    grid-column: 2;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.stock-name {
+    grid-column: 2;
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #9ca3af;
+    transition: color 150ms ease;
+}
+
+.close-button:hover { color: #111827; }
+.close-button svg { width: 24px; height: 24px; }
+
+/* --- Body --- */
+.modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.price-details, .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    background-color: #f9fafb;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.detail-item, .summary-item { display: flex; flex-direction: column; }
+.text-right { text-align: right; }
+.detail-item .label, .summary-item .label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+.detail-item .value { font-size: 16px; font-weight: 600; color: #111827; }
+.summary-item .value { font-size: 14px; font-weight: 500; color: #374151; }
+.value.up { color: #16a34a; }
+.value.down { color: #dc2626; }
+
+/* --- Form Elements --- */
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label { font-size: 13px; font-weight: 500; color: #374151; }
+
+.input-wrapper { position: relative; }
+.input-wrapper .adornment { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #9ca3af; }
+
+.form-control {
+    width: 100%;
+    padding: 12px 14px 12px 32px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #111827;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .form-control:focus {
-    background-color: #495057;
-    border-color: #80bdff;
-    color: #fff;
+    outline: none;
+    border-color: #3b82f6;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-.alert-info {
-    background-color: #0d6efd20;
-    border-color: #0d6efd;
-    color: #9ec5fe;
+/* --- Footer --- */
+.modal-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 24px;
+    background-color: #f9fafb;
+    border-top: 1px solid #f0f0f0;
 }
 
-.btn:disabled {
-    opacity: 0.5;
+.confirmation-check { display: flex; align-items: center; gap: 8px; }
+.confirmation-check label { font-size: 13px; color: #4b5563; cursor: pointer; }
+.confirmation-check input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 100ms ease;
+    position: relative;
+}
+.confirmation-check input[type="checkbox"]:checked {
+    border-color: #2563eb;
+    background-color: #2563eb;
+}
+.confirmation-check input[type="checkbox"]:checked::before {
+    content: '✓';
+    position: absolute;
+    top: 0px;
+    left: 3px;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
 }
 
-/* Update the modal buttons to match the new color scheme */
-.btn.primary.buy {
-    background: linear-gradient(135deg, #059669, #047857);
-    color: #fff;
+.execute-btn {
+    width: 100%;
+    padding: 12px;
     border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 150ms ease;
 }
 
-.btn.primary.buy:hover {
-    background: linear-gradient(135deg, #047857, #065f46);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+.execute-btn.buy { background-color: #16a34a; color: white; }
+.execute-btn.buy:hover:not(:disabled) { background-color: #15803d; }
+.execute-btn.sell { background-color: #dc2626; color: white; }
+.execute-btn.sell:hover:not(:disabled) { background-color: #b91c1c; }
+
+.execute-btn:disabled {
+    background-color: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
 }
 
-.btn.primary.sell {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    color: #fff;
-    border: none;
-}
-
-.btn.primary.sell:hover {
-    background: linear-gradient(135deg, #b91c1c, #991b1b);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
-}
+/* --- Animations --- */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn { from { transform: translateY(20px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
