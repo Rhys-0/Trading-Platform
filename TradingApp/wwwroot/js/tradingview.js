@@ -1,5 +1,8 @@
-window.tradingView = {
-    loadSingleQuote: function (containerId, symbol, options) {
+(function () {
+    const root = window;
+    root.tradingView = root.tradingView || {};
+
+    root.tradingView.loadSymbolOverview = root.tradingView.loadSymbolOverview || function (containerId, symbols, options) {
         const host = document.getElementById(containerId);
         if (!host) return;
 
@@ -7,75 +10,60 @@ window.tradingView = {
 
         const s = document.createElement("script");
         s.type = "text/javascript";
-        s.src = "https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js";
+        s.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js";
         s.async = true;
 
+        const list = Array.isArray(symbols) ? symbols : [];
+        const pairs = list.map(sym => {
+            const label = (sym && sym.includes(":")) ? sym.split(":")[1] : (sym || "Symbol");
+            return [label, `${sym}|1D`];
+        });
+
         const cfg = {
-            symbol,
+            lineWidth: 2,
+            lineType: 0,
+            chartType: "area",
+            fontColor: "rgb(106, 109, 120)",
+            gridLineColor: "rgba(46, 46, 46, 0.06)",
+            volumeUpColor: "rgba(34, 171, 148, 0.5)",
+            volumeDownColor: "rgba(247, 82, 95, 0.5)",
+            backgroundColor: "#ffffff",
+            widgetFontColor: "#0F0F0F",
+            upColor: "#22ab94",
+            downColor: "#f7525f",
+            borderUpColor: "#22ab94",
+            borderDownColor: "#f7525f",
+            wickUpColor: "#22ab94",
+            wickDownColor: "#f7525f",
             colorTheme: options?.colorTheme || "light",
             isTransparent: !!options?.isTransparent,
             locale: options?.locale || "en",
-            width: options?.width || 350
+            chartOnly: false,
+            scalePosition: "right",
+            scaleMode: "Normal",
+            fontFamily: "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+            valuesTracking: "1",
+            changeMode: "price-and-percent",
+            symbols: pairs.length ? pairs : [["AAPL", "NASDAQ:AAPL|1D"]],
+            dateRanges: ["1d|1", "1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"],
+            fontSize: "10",
+            headerFontSize: "medium",
+            autosize: true,
+            width: "100%",
+            height: "100%",
+            noTimeScale: false,
+            hideDateRanges: false,
+            hideMarketStatus: false,
+            hideSymbolLogo: false
         };
 
         s.innerHTML = JSON.stringify(cfg);
-        (host.parentElement || host).appendChild(s);
-    },
+        host.appendChild(s);
+    };
 
-    _book: {},
+    root.tradingViewReady = function () {
+        return !!(root.tradingView && typeof root.tradingView.loadSymbolOverview === "function");
+    };
 
-    _seed(symbol) {
-        if (!this._book[symbol]) {
-            let base = 100;
-            if (symbol.includes("TSLA")) base = 250;
-            else if (symbol.includes("NVDA")) base = 900;
-            else if (symbol.includes("AMZN")) base = 180;
-            else if (symbol.includes("AAPL")) base = 185;
-            else if (symbol.includes("MSFT")) base = 420;
-            else if (symbol.includes("SPY")) base = 510;
-            else if (symbol.includes("KO")) base = 60;
-            else if (symbol.includes("DIS")) base = 110;
-            this._book[symbol] = { price: base, prev: base };
-        }
-    },
-
-    _tickOne(symbol) {
-        this._seed(symbol);
-        const row = this._book[symbol];
-        row.prev = row.price;
-
-        // random walk +/- ~1%
-        const deltaPct = (Math.random() - 0.5) * 0.02;
-        const next = row.price * (1 + deltaPct);
-        row.price = Math.max(1, Math.round(next * 100) / 100);
-    },
-
-    getQuote(symbol) {
-        this._tickOne(symbol);
-        const row = this._book[symbol];
-        const change = +(row.price - row.prev).toFixed(2);
-        const changePct = row.prev === 0 ? 0 : +((change / row.prev) * 100).toFixed(2);
-        return {
-            Symbol: symbol,
-            Price: row.price,
-            Change: change,
-            ChangePercent: changePct,
-            IsUp: change >= 0
-        };
-    },
-
-    getQuotes(symbols) {
-        if (!Array.isArray(symbols)) return [];
-        return symbols.map(s => this.getQuote(s));
-    },
-
-    getQuotesJson(symbols) {
-        const json = JSON.stringify(this.getQuotes(symbols));
-        console.log("[TV] getQuotesJson called for", symbols, "->", json);
-        return json;
-    }
-};
-
-window.tradingViewReady = function () {
-    return !!(window.tradingView && typeof window.tradingView.getQuotes === "function");
-};
+    console.log("[TV] tradingview.js loaded");
+})();
