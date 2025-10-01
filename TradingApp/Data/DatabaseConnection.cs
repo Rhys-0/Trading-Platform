@@ -13,9 +13,10 @@ namespace TradingApp.Data {
         public DatabaseConnection(IConfiguration configuration, ILogger<DatabaseConnection>? logger = null) {
             // Use configuration instead of hardcoded string
             _connectionString = configuration.GetConnectionString("DefaultConnection") ?? 
-                "Host=aws-1-ap-southeast-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.hnpkbxsqvfzvkhedwpas;Password=2VY2UnyYu01dyPpA;SSL Mode=Require;Trust Server Certificate=true;";
+                "User Id=postgres.hnpkbxsqvfzvkhedwpas;Password=DgsOAEF2lXntu8nb;Server=aws-1-ap-southeast-2.pooler.supabase.com;Port=5432;Database=postgre;SSL Mode=Require;Trust Server Certificate=true;";
         
             _logger = logger;
+            Console.WriteLine($"🔍 DB DEBUG: Connection string loaded: {_connectionString}");
             _logger?.LogInformation("Database connection string loaded: {ConnectionString}", _connectionString);
         }
 

@@ -29,9 +29,7 @@ builder.Services.AddHostedService<StockPriceService>();
 // Authentication service
 builder.Services.AddScoped<TradingApp.Data.Interfaces.IAuthenticationService, TradingApp.Data.AuthenticationService>();
 
-// Email and verification services
-builder.Services.AddScoped<TradingApp.Data.Interfaces.IEmailService, TradingApp.Data.EmailService>();
-builder.Services.AddScoped<TradingApp.Data.Interfaces.IVerificationService, TradingApp.Data.VerificationService>();
+// Email and verification services removed - not needed for core functionality
 
 // Leaderboard service
 builder.Services.AddScoped<TradingApp.Models.Interfaces.ILeaderboardService, TradingApp.Data.LeaderboardService>();

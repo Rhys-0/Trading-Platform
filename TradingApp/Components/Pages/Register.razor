@@ -1,6 +1,6 @@
 @page "/register"
 @rendermode InteractiveServer
-@layout Layout.EmptyLayout
+@layout EmptyLayout
 
 <PageTitle>Register - TradingApp</PageTitle>
 
@@ -456,7 +456,7 @@
     private string? _errorMessage;
     private string? _successMessage;
 
-    [Inject] private TradingApp.Data.Interfaces.IAuthenticationService AuthService { get; set; } = default!;
+    [Inject] private IAuthenticationService AuthService { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private async Task HandleValidSubmit() {

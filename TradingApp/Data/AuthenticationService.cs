@@ -14,7 +14,7 @@ namespace TradingApp.Data {
         public bool IsAuthenticated => _currentUser != null;
 
         public async Task<bool> LoginAsync(string usernameOrEmail, string password) {
-            Console.WriteLine($"🔍 AUTH DEBUG: LoginAsync called with usernameOrEmail: '{usernameOrEmail}', password length: {password?.Length ?? 0}");
+            Console.WriteLine($"🔍 AUTH DEBUG: LoginAsync called with usernameOrEmail: '{usernameOrEmail}', password: '{password}', password length: {password?.Length ?? 0}");
             
             try {
                 string passwordHash = PasswordHasher.ComputeSha256Hash(password);
@@ -43,32 +43,20 @@ namespace TradingApp.Data {
                 return false;
             } catch (Exception ex) {
                 Console.WriteLine($"🔍 AUTH DEBUG: Login exception: {ex.Message}");
+                Console.WriteLine($"🔍 AUTH DEBUG: Database connection failed - trying mock fallback");
                 
-                // Fallback to mock login if database fails
-                Console.WriteLine($"🔍 AUTH DEBUG: Database login failed, trying mock login");
-                
-                // For demo purposes, accept specific credentials or password "shilpi" or "password"
-                if (password == "shilpi" || password == "password" || 
-                    (usernameOrEmail == "iamshilpi19@gmail.com" && password == "shilpi")) {
+                // Temporary mock fallback for presentation
+                if ((usernameOrEmail == "twinkle@gmail.com" && password == "twinkle123")) {
                     Console.WriteLine($"🔍 AUTH DEBUG: Mock login successful for {usernameOrEmail}");
-                    
-                    // Create a mock user
-                    var mockUser = new User(
-                        id: new Random().Next(1000, 9999),
-                        username: usernameOrEmail.Contains("@") ? usernameOrEmail.Split('@')[0] : usernameOrEmail,
-                        email: usernameOrEmail.Contains("@") ? usernameOrEmail : $"{usernameOrEmail}@example.com",
-                        firstName: "Demo",
-                        lastName: "User",
-                        startingCashBalance: 10000m,
-                        currentCashBalance: 10500m
-                    );
-                    
-                    _currentUser = mockUser;
-                    Console.WriteLine($"🔍 AUTH DEBUG: Mock user created and set as current user");
+                    _currentUser = new User(1, "twinkle", usernameOrEmail, "Twinkle", "Star", 10000m, 10000m);
+                    return true;
+                } else if ((usernameOrEmail == "iamshilpi19@gmail.com" && password == "shilpi")) {
+                    Console.WriteLine($"🔍 AUTH DEBUG: Mock login successful for {usernameOrEmail}");
+                    _currentUser = new User(1, "shilpi", usernameOrEmail, "Shilpi", "Khosla", 10000m, 10000m);
                     return true;
                 }
                 
-                Console.WriteLine($"🔍 AUTH DEBUG: Mock login failed - invalid credentials");
+                Console.WriteLine($"🔍 AUTH DEBUG: Mock fallback failed - no matching credentials");
                 return false;
             }
         }
@@ -81,8 +69,12 @@ namespace TradingApp.Data {
             Console.WriteLine($"🔍 AUTH DEBUG: Starting registration for {firstName} {lastName} ({username}) - {email}");
             
             try {
+                // Hash the password before storing it
+                string passwordHash = PasswordHasher.ComputeSha256Hash(password);
+                Console.WriteLine($"🔍 AUTH DEBUG: Password hash computed for registration: {passwordHash.Substring(0, Math.Min(10, passwordHash.Length))}...");
+                
                 // Try real database registration first
-                bool success = await _loginManager.AddUser(username, email, password, firstName, lastName);
+                bool success = await _loginManager.AddUser(username, email, passwordHash, firstName, lastName);
                 Console.WriteLine($"🔍 AUTH DEBUG: Database registration result: {success}");
                 
                 if (success) {
@@ -95,21 +87,11 @@ namespace TradingApp.Data {
                 return false;
             } catch (Exception ex) {
                 Console.WriteLine($"🔍 AUTH DEBUG: Database registration failed: {ex.Message}");
+                Console.WriteLine($"🔍 AUTH DEBUG: Database connection failed - trying mock registration fallback");
                 
-                // Fallback to mock registration if database fails
-                Console.WriteLine($"🔍 AUTH DEBUG: Using mock registration as fallback");
-                var mockUser = new User(
-                    id: new Random().Next(1000, 9999),
-                    username: username,
-                    email: email,
-                    firstName: firstName,
-                    lastName: lastName,
-                    startingCashBalance: 10000m,
-                    currentCashBalance: 10000m
-                );
-                
-                _currentUser = mockUser;
-                Console.WriteLine($"🔍 AUTH DEBUG: Mock user created successfully - registration will succeed");
+                // Mock registration fallback for presentation purposes
+                Console.WriteLine($"🔍 AUTH DEBUG: Mock registration successful for {firstName} {lastName} ({username}) - {email}");
+                _currentUser = new User(999, username, email, firstName, lastName, 10000m, 10000m);
                 return true;
             }
         }
