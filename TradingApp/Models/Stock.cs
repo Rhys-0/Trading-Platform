@@ -1,6 +1,6 @@
 ﻿namespace TradingApp.Models;
 
-public class Stock
+internal class Stock
 {
     public required string Symbol { get; set; }
     public required string Name { get; set; }
