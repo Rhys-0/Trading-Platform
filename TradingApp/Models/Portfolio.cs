@@ -59,3 +59,4 @@ namespace TradingApp.Models {
         }
     }
 }
+// uuh
