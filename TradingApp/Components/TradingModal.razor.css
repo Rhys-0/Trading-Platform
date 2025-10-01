@@ -26,3 +26,28 @@
 .btn:disabled {
     opacity: 0.5;
 }
+
+/* Update the modal buttons to match the new color scheme */
+.btn.primary.buy {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+    border: none;
+}
+
+.btn.primary.buy:hover {
+    background: linear-gradient(135deg, #047857, #065f46);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.btn.primary.sell {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #fff;
+    border: none;
+}
+
+.btn.primary.sell:hover {
+    background: linear-gradient(135deg, #b91c1c, #991b1b);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
