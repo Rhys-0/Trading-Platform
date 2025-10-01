@@ -4,6 +4,7 @@ trigger:
 - database-dev
 - stock-news
 - order-page
+- stockpage
 
 pool:
   vmImage: ubuntu-latest
