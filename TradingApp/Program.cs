@@ -42,7 +42,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Disable HTTPS redirection for clean development startup
+// app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
@@ -50,12 +51,12 @@ app.UseAntiforgery();
 app.MapRazorComponents<TradingApp.Components.App>()
     .AddInteractiveServerRenderMode();
 
-// Use a different port to avoid conflicts
-app.Urls.Add("http://localhost:8080");
+    // Use a different port to avoid conflicts
+    app.Urls.Add("http://localhost:3000");
 
 // Display the application URL in the terminal
 Console.WriteLine("🚀 TradingApp is starting...");
-Console.WriteLine("🌐 Application URL: http://localhost:8080");
+Console.WriteLine("🌐 Application URL: http://localhost:3000");
 Console.WriteLine("📱 Open your browser and navigate to the URL above");
 Console.WriteLine("");
 

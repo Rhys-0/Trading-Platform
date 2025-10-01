@@ -9,8 +9,9 @@ namespace TradingApp.Data {
         private readonly ILogger<DatabaseConnection>? _logger;
 
         public DatabaseConnection(IConfiguration configuration, ILogger<DatabaseConnection>? logger = null) {
-            // FIXED: Using the exact Supabase connection string format that works
-            _connectionString = "Host=aws-1-ap-southeast-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.hnpkbxsqvfzvkhedwpas;Password=2VY2UnyYu01dyPpA;SSL Mode=Require;Trust Server Certificate=true;";
+            // Use configuration instead of hardcoded string
+            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? 
+                "Host=aws-1-ap-southeast-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.hnpkbxsqvfzvkhedwpas;Password=2VY2UnyYu01dyPpA;SSL Mode=Require;Trust Server Certificate=true;";
         
             _logger = logger;
             _logger?.LogInformation("Database connection string loaded: {ConnectionString}", _connectionString);
