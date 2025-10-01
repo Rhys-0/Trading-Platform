@@ -24,7 +24,10 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<PortfolioService>();
 
 // Register HttpClient for Stock News API calls
-builder.Services.AddHttpClient<NewsService>();
+builder.Services.AddHttpClient<NewsService>(client =>
+{
+    client.BaseAddress = new Uri("https://www.alphavantage.co/");
+});
 builder.Services.AddScoped<NewsService>();
 
 // Background Services
@@ -36,7 +39,7 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+
     app.UseHsts();
 }
 

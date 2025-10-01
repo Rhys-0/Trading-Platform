@@ -1,22 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace TradingApp.Data
 {
-    public class NewsService
+    internal class NewsService
     {
         private readonly HttpClient _http;
-        private readonly IConfiguration _config;
         private readonly string _apiKey;
+        private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         public NewsService(HttpClient http, IConfiguration config)
         {
             _http = http;
-            _config = config;
             _apiKey = config["AlphaVantageApiKey"] ?? 
                 throw new ArgumentNullException(nameof(config), "AlphaVantageApiKey not configured");
         }
@@ -25,83 +27,75 @@ namespace TradingApp.Data
         {
             try
             {
-                var url = $"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&topics=technology,earnings&apikey={_apiKey}";
-                
-                var response = await _http.GetAsync(url);
-                var jsonString = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Raw API Response: {jsonString}"); // Debug logging
+                var relativeUrl = $"query?function=NEWS_SENTIMENT&topics=technology,earnings&apikey={_apiKey}";
+                var requestUri = new Uri(relativeUrl, UriKind.Relative);
+                var response = await _http.GetAsync(requestUri);
 
-                // First try to parse as a dynamic object to inspect the structure
-                using JsonDocument document = JsonDocument.Parse(jsonString);
-                var root = document.RootElement;
-
-                // Check if we have a feed or items property
-                var newsArray = root.TryGetProperty("feed", out var feedElement) 
-                    ? feedElement 
-                    : root.TryGetProperty("items", out var itemsElement) 
-                        ? itemsElement 
-                        : default;
-
-                if (newsArray.ValueKind != JsonValueKind.Array)
+                if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine("Response does not contain a valid news array");
+                    Console.WriteLine($"API request failed with status code: {response.StatusCode}");
                     return new List<NewsArticle>();
                 }
 
-                var articles = new List<NewsArticle>();
-                
-                foreach (var item in newsArray.EnumerateArray())
-                {
-                    try
-                    {
-                        var article = new NewsArticle
-                        {
-                            Title = GetJsonString(item, "title"),
-                            Description = GetJsonString(item, "summary") ?? GetJsonString(item, "description") ?? "",
-                            Url = GetJsonString(item, "url"),
-                            Source = GetJsonString(item, "source"),
-                            PublishedAt = ParseDateTime(GetJsonString(item, "time_published") ?? GetJsonString(item, "published_at") ?? ""),
-                            ImageUrl = GetJsonString(item, "banner_image")
-                        };
-                        
-                        if (!string.IsNullOrEmpty(article.Title))
-                        {
-                            articles.Add(article);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error parsing news item: {ex.Message}");
-                        continue;
-                    }
-                }
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonSerializer.Deserialize<AlphaVantageResponse>(jsonString, _jsonOptions);
 
-                return articles;
+                var newsItems = apiResponse?.Feed ?? apiResponse?.Items ?? new List<NewsItem>();
+
+                return newsItems.Select(item => new NewsArticle
+                {
+                    Title = item.Title ?? "No Title",
+                    Description = item.Summary ?? item.Description ?? "",
+                    Url = item.Url ?? "#",
+                    Source = item.Source ?? "Unknown",
+                    PublishedAt = ParseAlphaVantageDateTime(item.TimePublished ?? item.PublishedAtAlternative),
+                    ImageUrl = item.BannerImage
+                }).ToList();
             }
-            catch (Exception ex)
+            catch (JsonException ex)
             {
-                Console.WriteLine($"Error fetching news: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                Console.WriteLine($"Error parsing JSON: {ex.Message}");
                 return new List<NewsArticle>();
             }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP request error: {ex.Message}");
+                return new List<NewsArticle>();
+            }
+            catch (TaskCanceledException ex)
+            {
+                Console.WriteLine($"Request timed out: {ex.Message}");
+                return new List<NewsArticle>();
+            }
+            catch (Exception)
+            {
+                // Rethrow unexpected exceptions
+                throw;
+            }
         }
 
-        private static DateTime ParseDateTime(string dateTimeStr)
+        private static DateTime ParseAlphaVantageDateTime(string? timePublished)
         {
-            return DateTime.TryParse(dateTimeStr, out var result) 
-                ? result 
-                : DateTime.UtcNow;
-        }
+            if (string.IsNullOrEmpty(timePublished))
+                return DateTime.UtcNow;
 
-        private static string? GetJsonString(JsonElement element, string propertyName)
-        {
-            return element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String
-                ? property.GetString()
-                : null;
+            // Format is "yyyyMMddTHHmmss"
+            if (DateTime.TryParseExact(timePublished, "yyyyMMdd'T'HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+            {
+                return result;
+            }
+            
+            // Fallback for other date formats
+            if (DateTime.TryParse(timePublished, out result))
+            {
+                return result;
+            }
+
+            return DateTime.UtcNow;
         }
     }
 
-    public class NewsArticle
+    internal class NewsArticle
     {
         public required string Title { get; set; }
         public required string Description { get; set; }
@@ -113,36 +107,21 @@ namespace TradingApp.Data
 
     internal class AlphaVantageResponse
     {
-        [JsonPropertyName("feed")]
         public List<NewsItem>? Feed { get; set; }
-
-        [JsonPropertyName("items")]
         public List<NewsItem>? Items { get; set; }
     }
 
     internal class NewsItem
     {
-        [JsonPropertyName("title")]
-        public string Title { get; set; } = string.Empty;
-        
-        [JsonPropertyName("url")]
-        public string Url { get; set; } = string.Empty;
-        
-        [JsonPropertyName("summary")]
+        public string? Title { get; set; }
+        public string? Url { get; set; }
         public string? Summary { get; set; }
-        
         [JsonPropertyName("banner_image")]
         public string? BannerImage { get; set; }
-        
-        [JsonPropertyName("source")]
-        public string Source { get; set; } = string.Empty;
-        
+        public string? Source { get; set; }
         [JsonPropertyName("time_published")]
         public string? TimePublished { get; set; }
-
-        [JsonPropertyName("description")]
         public string? Description { get; set; }
-
         [JsonPropertyName("published_at")]
         public string? PublishedAtAlternative { get; set; }
     }
