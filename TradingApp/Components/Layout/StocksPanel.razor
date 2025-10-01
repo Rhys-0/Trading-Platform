@@ -12,26 +12,37 @@
       @foreach (var s in FilteredSymbols)
       {
         var q = Quotes.TryGetValue(s, out var qq) ? qq : null;
-        <li>
-          <div class="symbol-card @(s == Selected ? "active" : null)" @onclick="() => Select(s)">
+        <li @key="s">
+          <div class="symbol-card @(s == Selected ? "active" : "")" @onclick="() => Selected = s">
             <div class="info">
-              <div class="sym">@s</div>
-              @if (q is not null)
+              <div class="sym">@s.Split(':').Last()</div>
+              @if (Quotes.TryGetValue(s, out var quote))
               {
                 <div class="row">
-                  <span class="price">@q.Price.ToString("F2")</span>
-                  <span class="chg @(q.IsUp ? "up" : "down")">
-                    @(q.IsUp ? "+" : "-")@Math.Abs(q.Change).ToString("F2")
-                    (@Math.Abs(q.ChangePercent).ToString("F2")%)
+                  <span class="price">$@quote.Price.ToString("F2")</span>
+                  <span class="chg @(quote.Change >= 0 ? "up" : "down")">
+                    @quote.Change.ToString("F2") (@(quote.ChangePercent.ToString("F2"))%)
                   </span>
                 </div>
               }
             </div>
 
             <div class="actions">
-              <button type="button" class="text-btn buy"  @onclick:stopPropagation="true">Buy</button>
-              <button type="button" class="text-btn sell" @onclick:stopPropagation="true">Sell</button>
+              <button class="trade-btn buy" @onclick="() => OpenBuyModal(s)" @onclick:stopPropagation="true">
+                <svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M8.5 2.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                </svg>
+                <span class="btn-text">Buy</span>
+              </button>
+              <button class="trade-btn sell" @onclick="() => OpenSellModal(s)" @onclick:stopPropagation="true">
+                <svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M2 8.75A.75.75 0 0 1 2.75 8h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8.75Z" />
+                </svg>
+                <span class="btn-text">Sell</span>
+              </button>
             </div>
+            <!-- END: Button block -->
+
           </div>
         </li>
       }
@@ -77,6 +88,9 @@
     <StockQuote Symbol="@Selected" Width="420" ColorTheme="light" />
   </section>
 </div>
+
+<TradingModal @ref="_tradingModal" OnTradeExecuted="HandleTradeExecuted" />
+<TradeNotification @ref="_notification" />
 
 @code {
     private string Selected = "NASDAQ:TSLA";
@@ -273,4 +287,48 @@
     }
 
     private void Select(string s) => Selected = s;
+
+    private TradingModal _tradingModal = null!;
+    private TradeNotification _notification = null!;
+
+    // Fix these methods to work with your symbol string
+    private void OpenBuyModal(string symbol)
+    {
+        if (Quotes.TryGetValue(symbol, out var quote))
+        {
+            var stock = new Stock 
+            { 
+                Symbol = symbol.Split(':').Last(), // Remove "NASDAQ:" prefix
+                Name = symbol,
+                Price = (decimal)quote.Price,
+                Change = (decimal)quote.Change,
+                ChangePercent = (decimal)quote.ChangePercent
+            };
+            _tradingModal.OpenModal(stock, TradingModal.TradeType.Buy);
+        }
+    }
+
+    private void OpenSellModal(string symbol)
+    {
+        if (Quotes.TryGetValue(symbol, out var quote))
+        {
+            var stock = new Stock 
+            { 
+                Symbol = symbol.Split(':').Last(), // Remove "NASDAQ:" prefix
+                Name = symbol,
+                Price = (decimal)quote.Price,
+                Change = (decimal)quote.Change,
+                ChangePercent = (decimal)quote.ChangePercent
+            };
+            _tradingModal.OpenModal(stock, TradingModal.TradeType.Sell);
+        }
+    }
+
+    private void HandleTradeExecuted(TradingModal.TradeConfirmation trade)  // Remove async if no await
+    {
+        _notification.ShowTradeConfirmation(trade);
+        
+        // Add actual trade execution logic here later
+        // await _tradingService.ExecuteTradeAsync(trade);
+    }
 }
