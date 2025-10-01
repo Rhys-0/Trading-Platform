@@ -1,8 +1,5 @@
 ﻿@namespace TradingApp.Components
-@using System.Text.Json
-@using System.Threading
 @using TradingApp.Models
-@inject IJSRuntime JS
 @inject Stocks StockModel
 @implements IDisposable
 
@@ -11,19 +8,19 @@
     <input class="stocks-search" @bind="search" placeholder="Search stock..." />
 
     <ul class="symbols">
-      @foreach (var s in FilteredSymbols)
+      @foreach (var s in VisibleSymbols)
       {
         var q = Quotes.TryGetValue(s, out var qq) ? qq : null;
         <li @key="s">
           <div class="symbol-card @(s == Selected ? "active" : "")" @onclick="() => Selected = s">
             <div class="info">
               <div class="sym">@s.Split(':').Last()</div>
-              @if (Quotes.TryGetValue(s, out var quote))
+              @if (q is not null)
               {
                 <div class="row">
-                  <span class="price">$@quote.Price.ToString("F2")</span>
-                  <span class="chg @(quote.Change >= 0 ? "up" : "down")">
-                    @quote.Change.ToString("F2") (@(quote.ChangePercent.ToString("F2"))%)
+                  <span class="price">$@q.Price.ToString("F2")</span>
+                  <span class="chg @(q.Change >= 0 ? "up" : "down")">
+                    @q.Change.ToString("F2") (@q.ChangePercent.ToString("F2")%)
                   </span>
                 </div>
               }
@@ -43,42 +40,14 @@
                 <span class="btn-text">Sell</span>
               </button>
             </div>
-            <!-- END: Button block -->
-
           </div>
         </li>
       }
     </ul>
 
     <div class="status" style="margin-top:.75rem">
-      <div style="display:flex; gap:.5rem; flex-wrap:wrap">
-        <button type="button" class="text-btn"
-                @onclick="@RefreshOnce"
-                @onclick:preventDefault
-                @onclick:stopPropagation>
-          Refresh now
-        </button>
-
-        <button type="button" class="text-btn"
-                @onclick="@BumpTsla"
-                @onclick:preventDefault
-                @onclick:stopPropagation>
-          Bump TSLA +1
-        </button>
-
-        <button type="button" class="text-btn"
-                @onclick="@CheckModuleReady"
-                @onclick:preventDefault
-                @onclick:stopPropagation>
-          Check module ready
-        </button>
-      </div>
-
-      <div><small>Clicks: @_clicks | Last click: @_lastClick</small></div>
+      <div><small>Source: Live API (server)</small></div>
       <div><small>Last update: @_lastUpdated</small></div>
-      <div><small>Module ready: @_moduleReady</small></div>
-      <div><small>Last JSON len: @_lastJsonLen</small></div>
-      <div><small>Last interop call: @_lastInterop</small></div>
       @if (!string.IsNullOrEmpty(_lastError))
       {
         <div><small class="error">Error: @_lastError</small></div>
@@ -97,11 +66,8 @@
 @code {
     private string Selected = "NASDAQ:TSLA";
     private string search = "";
-
-    private readonly string[] Symbols = {
-        "NASDAQ:TSLA","NASDAQ:AAPL","NASDAQ:MSFT","NASDAQ:NVDA",
-        "NASDAQ:AMZN","NYSE:SPY","NYSE:KO","NYSE:DIS"
-    };
+    private string? _lastUpdated = "(none yet)";
+    private string? _lastError;
 
     private sealed class QuoteDto {
         public string Symbol { get; set; } = "";
@@ -113,163 +79,48 @@
 
     private readonly Dictionary<string, QuoteDto> Quotes = new();
 
-    private CancellationTokenSource? _cts;
-    private bool _started;
-    private string? _lastUpdated = "(none yet)";
-    private string? _lastError;
-
-    private IJSObjectReference? _bridge;
-    private string _moduleReady = "false";
-
-    // diagnostics
-    private int _clicks;
-    private string _lastClick = "(never)";
-    private string _lastInterop = "(never)";
-    private int _lastJsonLen;
+    private readonly string[] Symbols = {
+        "NASDAQ:TSLA","NASDAQ:AAPL","NASDAQ:MSFT","NASDAQ:NVDA",
+        "NASDAQ:AMZN","NYSE:SPY","NYSE:KO","NYSE:DIS"
+    };
 
     private IEnumerable<string> FilteredSymbols =>
         string.IsNullOrWhiteSpace(search)
             ? Symbols
             : Symbols.Where(s => s.Contains(search, StringComparison.OrdinalIgnoreCase));
 
+    private IEnumerable<string> VisibleSymbols =>
+        FilteredSymbols.Where(sym => Quotes.TryGetValue(sym, out var q) && q.Price > 0);
+
     protected override void OnInitialized() {
-        foreach (var s in Symbols)
-            Quotes[s] = new QuoteDto { Symbol = s, Price = 0, Change = 0, ChangePercent = 0, IsUp = true };
+        foreach (var kv in StockModel.StockList) {
+            var key = MapToDisplayKey(kv.Key);
+            Quotes[key] = new QuoteDto {
+                Symbol = key,
+                Price = (double)kv.Value.Price,
+                Change = 0,
+                ChangePercent = 0,
+                IsUp = true
+            };
+        }
 
         StockModel.PriceUpdated += OnPriceUpdatedFromServer;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (!firstRender || _started) return;
-        _started = true;
-
-        try {
-            _bridge = await JS.InvokeAsync<IJSObjectReference>("import", "/js/tradingviewBridge.js?v=1");
-            var ok = await _bridge.InvokeAsync<bool>("ready");
-            _moduleReady = ok ? "true" : "false";
-        }
-        catch (Exception ex) {
-            _moduleReady = "error: " + ex.Message;
-            await InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        _cts = new CancellationTokenSource();
-        _ = RefreshLoop(_cts.Token);
-        await Task.CompletedTask;
-    }
-
-    private async Task RefreshLoop(CancellationToken token) {
-        if (_bridge is null) return;
-
-        var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(4));
-
-        while (!token.IsCancellationRequested) {
-            await RefreshOnceInternal(opts);
-
-            try {
-                var ticked = await timer.WaitForNextTickAsync(token);
-                if (!ticked) break;
-            }
-            catch (OperationCanceledException) { break; }
-        }
-    }
-
-    private async Task RefreshOnce() {
-        _clicks++;
-        _lastClick = DateTime.Now.ToLongTimeString();
-        var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        await RefreshOnceInternal(opts);
-    }
-
-    private async Task RefreshOnceInternal(JsonSerializerOptions opts) {
-        if (_bridge is null) {
-            _lastError = "JS bridge not loaded.";
-            await InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        try {
-            _lastInterop = "bridge.getQuotesJson @ " + DateTime.Now.ToLongTimeString();
-
-            var json = await _bridge.InvokeAsync<string>("getQuotesJson", (object)Symbols);
-            _lastJsonLen = json?.Length ?? 0;
-
-            if (string.IsNullOrWhiteSpace(json)) {
-                _lastError = "Empty JSON from getQuotesJson.";
-                await InvokeAsync(StateHasChanged);
-                return;
-            }
-
-            var arr = JsonSerializer.Deserialize<QuoteDto[]>(json, opts);
-            if (arr is null) {
-                _lastError = "Deserialized array is null.";
-                await InvokeAsync(StateHasChanged);
-                return;
-            }
-
-            foreach (var q in arr) {
-                if (!string.IsNullOrWhiteSpace(q.Symbol))
-                    Quotes[q.Symbol] = q;
-            }
-
-            _lastUpdated = DateTime.Now.ToLongTimeString();
-            _lastError = null;
-
-            await InvokeAsync(StateHasChanged);
-        }
-        catch (JSException jse) {
-            _lastError = "JSInterop error: " + jse.Message;
-            await InvokeAsync(StateHasChanged);
-        }
-        catch (Exception ex) {
-            _lastError = "Loop error: " + ex.Message;
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private Task CheckModuleReady() {
-        _clicks++;
-        _lastClick = DateTime.Now.ToLongTimeString();
-        return InvokeAsync(StateHasChanged);
-    }
-
-    private async Task BumpTsla() {
-        _clicks++;
-        _lastClick = DateTime.Now.ToLongTimeString();
-
-        if (Quotes.TryGetValue("NASDAQ:TSLA", out var q)) {
-            var prev = q.Price;
-            q.Price = Math.Round(prev + 1.0, 2);
-            q.Change = Math.Round(q.Price - prev, 2);
-            q.ChangePercent = prev == 0 ? 0 : Math.Round((q.Change / prev) * 100.0, 2);
-            q.IsUp = q.Change >= 0;
-            _lastUpdated = DateTime.Now.ToLongTimeString();
-        } else {
-            Quotes["NASDAQ:TSLA"] = new QuoteDto {
-                Symbol = "NASDAQ:TSLA",
-                Price = 1,
-                Change = 1,
-                ChangePercent = 100,
-                IsUp = true
-            };
-            _lastUpdated = DateTime.Now.ToLongTimeString();
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
+    private static string MapToDisplayKey(string bareSymbol) => bareSymbol switch {
+        "SPY" => "NYSE:SPY",
+        "KO"  => "NYSE:KO",
+        "DIS" => "NYSE:DIS",
+        _     => $"NASDAQ:{bareSymbol}"
+    };
 
     private void OnPriceUpdatedFromServer(string bareSymbol, decimal newPrice) {
-        // Map "TSLA" -> "NASDAQ:TSLA" for those we show here
-        string key = bareSymbol switch {
-            "SPY" => "NYSE:SPY",
-            "KO"  => "NYSE:KO",
-            "DIS" => "NYSE:DIS",
-            _     => $"NASDAQ:{bareSymbol}"
-        };
+        var key = MapToDisplayKey(bareSymbol);
 
-        if (!Quotes.TryGetValue(key, out var q)) return;
+        if (!Quotes.TryGetValue(key, out var q)) {
+            q = new QuoteDto { Symbol = key };
+            Quotes[key] = q;
+        }
 
         var prev = q.Price;
         q.Price = (double)newPrice;
@@ -278,14 +129,22 @@
         q.IsUp = q.Change >= 0;
 
         _lastUpdated = DateTime.Now.ToLongTimeString();
+
+        // Ensure the selected item is one that is visible
+        EnsureSelectedVisible();
+
         _ = InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose() {
-        _cts?.Cancel();
-        _cts?.Dispose();
+    private void EnsureSelectedVisible() {
+        if (!VisibleSymbols.Contains(Selected)) {
+            var first = VisibleSymbols.FirstOrDefault();
+            if (!string.IsNullOrEmpty(first))
+                Selected = first;
+        }
+    }
 
-        // unsubscribe from server feed
+    public void Dispose() {
         StockModel.PriceUpdated -= OnPriceUpdatedFromServer;
     }
 
