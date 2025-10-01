@@ -1,33 +1,30 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 
-namespace TradingApp.Models {
+namespace TradingApp.Models
+{
     internal class Stocks {
-        internal Dictionary<string, Stock> StockList { get; }
+        public ConcurrentDictionary<string, Stock> StockPrices { get; } = new() {
+            ["AAPL"] = new Stock { Symbol = "AAPL", Name = "Apple Inc.", Price = 0 },
+            ["GOOGL"] = new Stock { Symbol = "GOOGL", Name = "Alphabet Inc.", Price = 0 },
+            ["MSFT"] = new Stock { Symbol = "MSFT", Name = "Microsoft Corporation", Price = 0 },
+            ["AMZN"] = new Stock { Symbol = "AMZN", Name = "Amazon.com Inc.", Price = 0 },
+            ["TSLA"] = new Stock { Symbol = "TSLA", Name = "Tesla Inc.", Price = 0 }
+        };
 
-        // UI can subscribe to this for live updates
+        public ConcurrentDictionary<string, Stock> StockList => StockPrices;
+
         internal event Action<string, decimal>? PriceUpdated;
 
-        private readonly object _lock = new();
-
-        public Stocks() {
-            StockList = new Dictionary<string, Stock> {
-                { "AAPL",  new Stock("AAPL",  "Apple Inc.",             0.00m) },
-                { "GOOGL", new Stock("GOOGL", "Alphabet Inc.",          0.00m) },
-                { "MSFT",  new Stock("MSFT",  "Microsoft Corporation",  0.00m) },
-                { "AMZN",  new Stock("AMZN",  "Amazon.com, Inc.",       0.00m) },
-                { "TSLA",  new Stock("TSLA",  "Tesla, Inc.",            0.00m) }
-            };
-        }
-
-        // Call this from background service whenever a price changes
         internal void SetPrice(string symbol, decimal price) {
-            lock (_lock) {
-                if (StockList.TryGetValue(symbol, out var s)) {
-                    s.Price = price;
-                } else {
-                    StockList[symbol] = new Stock(symbol, symbol, price);
-                }
-            }
+            StockPrices.AddOrUpdate(
+                symbol,
+                s => new Stock(s, s, price),
+                (s, existing) =>
+                {
+                    existing.Price = price;
+                    return existing;
+                });
+
             PriceUpdated?.Invoke(symbol, price);
         }
     }
