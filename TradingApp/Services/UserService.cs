@@ -1,5 +1,6 @@
 ﻿using TradingApp.Data;
 using TradingApp.Models;
+using System.Security.Claims;
 
 namespace TradingApp.Services {
     internal class UserService {
@@ -67,7 +68,7 @@ namespace TradingApp.Services {
             if (!cashRemoved) {
                 return false; // Not enough cash to execute the trade
             }
-            
+
             user.Portfolio.AddStocks(stockTicker, quantity, stock.Price);
 
             // Log the trade
@@ -83,5 +84,23 @@ namespace TradingApp.Services {
             return true;
         }
 
+        public async Task<User?> GetCurrentUserAsync(ClaimsPrincipal userPrincipal)
+        {
+            if (userPrincipal?.Identity?.IsAuthenticated != true)
+                return null;
+
+            var username = userPrincipal.Identity.Name;
+            if (string.IsNullOrEmpty(username))
+                return null;
+
+            var user = await _UserManager.GetUser(username);
+            if (user == null)
+                return null;
+
+            await _UserManager.LoadUserPortfolio(user);
+            await _UserManager.LoadUserTrades(user);
+
+            return user;
+        }
     }
 }

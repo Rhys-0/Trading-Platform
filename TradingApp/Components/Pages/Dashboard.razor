@@ -1,5 +1,12 @@
 ﻿@page "/dashboard"
 @rendermode InteractiveServer
+@using TradingApp.Data.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthStateProvider
+@inject TradingApp.Services.UserService UserService
+@inject TradingApp.Services.PortfolioService PortfolioService
+@inject TradingApp.Models.Stocks Stocks
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -21,7 +28,7 @@
             </div>
         </div>
     </div>
-    
+
     <hr class="my-5" />
 
     <div class="row g-4">
@@ -45,8 +52,8 @@
                             @foreach (var holding in Holdings)
                             {
                                 <tr>
-                                    <td>@holding.Ticker</td>
                                     <td>@holding.Name</td>
+                                    <td>@holding.Ticker</td>
                                     <td>@holding.Quantity</td>
                                     <td>@holding.AveragePrice.ToString("C")</td>
                                     <td>@holding.CurrentPrice.ToString("C")</td>
@@ -72,51 +79,59 @@
         public int Quantity { get; set; }
         public decimal AveragePrice { get; set; }
         public decimal CurrentPrice { get; set; }
-        public decimal PriceChange { get; set; }
-        public decimal DailyChange => PriceChange / (CurrentPrice - PriceChange);
+        public decimal DailyChange { get; set; }
         public decimal PortfolioWeight { get; set; }
     }
 
     private List<Holding> Holdings = new();
-    private decimal FlatChange => Holdings.Sum(h => h.PriceChange * h.Quantity);
+    private decimal FlatChange => Holdings.Sum(h => (h.CurrentPrice - h.AveragePrice) * h.Quantity);
     private decimal TotalValue => Holdings.Sum(h => h.CurrentPrice * h.Quantity);
-    private decimal PercentageChange => FlatChange / (TotalValue - FlatChange);
+    private decimal PercentageChange => TotalValue != 0 ? FlatChange / (TotalValue - FlatChange) : 0;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Placeholder data waiting to connect to databse
-        Holdings.Add(new Holding
-        {
-            Ticker = "AAPL",
-            Name = "Apple Inc.",
-            Quantity = 50,
-            AveragePrice = 125.00m,
-            CurrentPrice = 150.00m,
-            PriceChange = 1.50m
-        });
-        Holdings.Add(new Holding
-        {
-            Ticker = "MSFT",
-            Name = "Microsoft Corp.",
-            Quantity = 25,
-            AveragePrice = 300.00m,
-            CurrentPrice = 400.00m,
-            PriceChange = 10.00m
-        });
-        Holdings.Add(new Holding
-        {
-            Ticker = "GOOGL",
-            Name = "Alphabet Inc.",
-            Quantity = 10,
-            AveragePrice = 1200.00m,
-            CurrentPrice = 1000.00m,
-            PriceChange = -5.00m
-        });
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userIdentity = authState.User;
 
-        var totalStockValue = Holdings.Sum(h => h.CurrentPrice * h.Quantity);
-        foreach (var holding in Holdings)
+        if (!userIdentity.Identity.IsAuthenticated)
+            return;
+
+        var user = await UserService.GetCurrentUserAsync(userIdentity);
+        if (user?.Portfolio?.Positions == null)
+            return;
+
+        PortfolioService.UpdateUserPortfolio(user);
+
+        Holdings = user.Portfolio.Positions.Values.Select(p =>
         {
-            holding.PortfolioWeight = (holding.CurrentPrice * holding.Quantity) / totalStockValue;
+            if (!Stocks.StockList.TryGetValue(p.StockSymbol, out var stock))
+                return null;
+
+            decimal avgPrice = p.PurchaseLots != null && p.PurchaseLots.Count > 0
+                ? p.PurchaseLots.Average(lot => lot.PurchasePrice)
+                : 0;
+
+            decimal dailyChange = avgPrice != 0 ? (stock.Price - avgPrice) / avgPrice : 0;
+
+            return new Holding
+            {
+                Ticker = p.StockSymbol,
+                Name = stock.Name,
+                Quantity = p.TotalQuantity,
+                AveragePrice = avgPrice,
+                CurrentPrice = stock.Price,
+                DailyChange = dailyChange,
+                PortfolioWeight = 0
+            };
+        })
+        .Where(h => h != null)
+        .Cast<Holding>()
+        .ToList();
+
+        var totalValue = Holdings.Sum(h => h.CurrentPrice * h.Quantity);
+        foreach (var h in Holdings)
+        {
+            h.PortfolioWeight = totalValue != 0 ? (h.CurrentPrice * h.Quantity) / totalValue : 0;
         }
     }
 }
