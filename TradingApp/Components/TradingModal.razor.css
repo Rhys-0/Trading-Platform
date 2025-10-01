@@ -1,0 +1,28 @@
+.modal {
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    border: 1px solid #6c757d;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, .5);
+}
+
+.card {
+    border: 1px solid #6c757d;
+}
+
+.form-control:focus {
+    background-color: #495057;
+    border-color: #80bdff;
+    color: #fff;
+}
+
+.alert-info {
+    background-color: #0d6efd20;
+    border-color: #0d6efd;
+    color: #9ec5fe;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+}

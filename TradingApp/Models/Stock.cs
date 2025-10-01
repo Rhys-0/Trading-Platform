@@ -1,13 +1,10 @@
-﻿namespace TradingApp.Models {
-    internal class Stock {
-        internal string Symbol { get; }
-        internal string Name { get; }
-        internal decimal Price { get; set; }
+﻿namespace TradingApp.Models;
 
-        internal Stock(string symbol, string name, decimal price) {
-            Symbol = symbol;
-            Name = name;
-            Price = price;
-        }
-    }
+public class Stock
+{
+    public required string Symbol { get; set; }
+    public required string Name { get; set; }
+    public decimal Price { get; set; }
+    public decimal Change { get; set; }
+    public decimal ChangePercent { get; set; }
 }

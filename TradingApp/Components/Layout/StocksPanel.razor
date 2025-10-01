@@ -29,8 +29,12 @@
             </div>
 
             <div class="actions">
-              <button type="button" class="text-btn buy"  @onclick:stopPropagation="true">Buy</button>
-              <button type="button" class="text-btn sell" @onclick:stopPropagation="true">Sell</button>
+              <button class="btn btn-success btn-sm me-1" @onclick="() => OpenBuyModal(s)" @onclick:stopPropagation="true">
+                <i class="bi bi-cart-plus"></i> Buy
+              </button>
+              <button class="btn btn-danger btn-sm" @onclick="() => OpenSellModal(s)" @onclick:stopPropagation="true">
+                <i class="bi bi-cart-dash"></i> Sell
+              </button>
             </div>
           </div>
         </li>
@@ -77,6 +81,9 @@
     <StockQuote Symbol="@Selected" Width="420" ColorTheme="light" />
   </section>
 </div>
+
+<TradingModal @ref="_tradingModal" OnTradeExecuted="HandleTradeExecuted" />
+<TradeNotification @ref="_notification" />
 
 @code {
     private string Selected = "NASDAQ:TSLA";
@@ -273,4 +280,48 @@
     }
 
     private void Select(string s) => Selected = s;
+
+    private TradingModal _tradingModal = null!;
+    private TradeNotification _notification = null!;
+
+    // Fix these methods to work with your symbol string
+    private void OpenBuyModal(string symbol)
+    {
+        if (Quotes.TryGetValue(symbol, out var quote))
+        {
+            var stock = new Stock 
+            { 
+                Symbol = symbol.Split(':').Last(), // Remove "NASDAQ:" prefix
+                Name = symbol,
+                Price = (decimal)quote.Price,
+                Change = (decimal)quote.Change,
+                ChangePercent = (decimal)quote.ChangePercent
+            };
+            _tradingModal.OpenModal(stock, TradingModal.TradeType.Buy);
+        }
+    }
+
+    private void OpenSellModal(string symbol)
+    {
+        if (Quotes.TryGetValue(symbol, out var quote))
+        {
+            var stock = new Stock 
+            { 
+                Symbol = symbol.Split(':').Last(), // Remove "NASDAQ:" prefix
+                Name = symbol,
+                Price = (decimal)quote.Price,
+                Change = (decimal)quote.Change,
+                ChangePercent = (decimal)quote.ChangePercent
+            };
+            _tradingModal.OpenModal(stock, TradingModal.TradeType.Sell);
+        }
+    }
+
+    private void HandleTradeExecuted(TradingModal.TradeConfirmation trade)  // Remove async if no await
+    {
+        _notification.ShowTradeConfirmation(trade);
+        
+        // Add actual trade execution logic here later
+        // await _tradingService.ExecuteTradeAsync(trade);
+    }
 }

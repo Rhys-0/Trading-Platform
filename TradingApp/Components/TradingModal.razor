@@ -1,0 +1,186 @@
+@namespace TradingApp.Components
+@using TradingApp.Models
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+
+<div class="modal fade @(_isVisible ? "show" : "")" id="tradingModal" tabindex="-1" style="display: @(_isVisible ? "block" : "none")">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">
+                    <i class="bi @(_tradeType == TradeType.Buy ? "bi-arrow-up-circle text-success" : "bi-arrow-down-circle text-danger")"></i>
+                    @_tradeType @_selectedStock?.Symbol
+                </h5>
+                <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+            </div>
+            
+            <div class="modal-body">
+                @if (_selectedStock != null)
+                {
+                    <div class="row">
+                        <!-- Stock Info Panel -->
+                        <div class="col-md-6">
+                            <div class="card bg-secondary mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">@_selectedStock.Symbol - @_selectedStock.Name</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Current Price:</span>
+                                        <span class="fw-bold text-success">$@_selectedStock.Price.ToString("F2")</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Change:</span>
+                                        <span class="@(_selectedStock.Change >= 0 ? "text-success" : "text-danger")">
+                                            @(_selectedStock.Change >= 0 ? "+" : "")@_selectedStock.Change.ToString("F2") (@_selectedStock.ChangePercent.ToString("F2")%)
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Available Balance:</span>
+                                        <span class="fw-bold">$@_availableBalance.ToString("F2")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trade Panel -->
+                        <div class="col-md-6">
+                            <div class="card bg-secondary">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Investment Amount ($)</label>
+                                        <input type="number" class="form-control bg-dark text-light border-secondary" 
+                                               @bind="_investmentAmount" @oninput="CalculateShares" 
+                                               placeholder="0.00" step="0.01" min="0" max="@_maxInvestment" />
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Shares to @_tradeType.ToString().ToLower()</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control bg-dark text-light border-secondary" 
+                                                   value="@_calculatedShares.ToString("F4")" readonly />
+                                            <span class="input-group-text bg-secondary text-light border-secondary">shares</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Estimated Total</label>
+                                        <div class="alert alert-info">
+                                            <strong>$@_estimatedTotal.ToString("F2")</strong>
+                                            <small class="d-block">+ fees if applicable</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" @bind="_confirmTrade" id="confirmTrade">
+                                            <label class="form-check-label" for="confirmTrade">
+                                                I confirm this @_tradeType.ToString().ToLower() order
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="btn @(_tradeType == TradeType.Buy ? "btn-success" : "btn-danger")" 
+                        @onclick="ExecuteTrade" disabled="@(!_confirmTrade || _investmentAmount <= 0)">
+                    <i class="bi @(_tradeType == TradeType.Buy ? "bi-cart-plus" : "bi-cart-dash")"></i>
+                    @_tradeType @_calculatedShares.ToString("F4") shares
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_isVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private bool _isVisible = false;
+    private Stock? _selectedStock;
+    private TradeType _tradeType = TradeType.Buy;
+    private decimal _investmentAmount = 0;
+    private decimal _calculatedShares = 0;
+    private decimal _estimatedTotal = 0;
+    private decimal _availableBalance = 10000; // Mock balance
+    private decimal _maxInvestment => _tradeType == TradeType.Buy ? _availableBalance : 999999;
+    private bool _confirmTrade = false;
+
+    [Parameter] public EventCallback<TradeConfirmation> OnTradeExecuted { get; set; }
+
+    public void OpenModal(Stock stock, TradeType tradeType)
+    {
+        _selectedStock = stock;
+        _tradeType = tradeType;
+        _investmentAmount = 0;
+        _calculatedShares = 0;
+        _estimatedTotal = 0;
+        _confirmTrade = false;
+        _isVisible = true;
+        StateHasChanged();
+    }
+
+    private void CloseModal()
+    {
+        _isVisible = false;
+        StateHasChanged();
+    }
+
+    private void CalculateShares(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var amount) && _selectedStock != null)
+        {
+            _investmentAmount = amount;
+            _calculatedShares = amount / _selectedStock.Price;
+            _estimatedTotal = _calculatedShares * _selectedStock.Price;
+        }
+        else
+        {
+            _calculatedShares = 0;
+            _estimatedTotal = 0;
+        }
+        StateHasChanged();
+    }
+
+    private async Task ExecuteTrade()
+    {
+        if (_selectedStock == null || _calculatedShares <= 0) return;
+
+        var confirmation = new TradeConfirmation
+        {
+            Stock = _selectedStock,
+            TradeType = _tradeType,
+            Shares = _calculatedShares,
+            PricePerShare = _selectedStock.Price,
+            TotalAmount = _estimatedTotal,
+            Timestamp = DateTime.Now
+        };
+
+        await OnTradeExecuted.InvokeAsync(confirmation);
+        CloseModal();
+    }
+
+    public enum TradeType
+    {
+        Buy,
+        Sell
+    }
+
+    public class TradeConfirmation
+    {
+        public Stock Stock { get; set; } = null!;
+        public TradeType TradeType { get; set; }
+        public decimal Shares { get; set; }
+        public decimal PricePerShare { get; set; }
+        public decimal TotalAmount { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+}
