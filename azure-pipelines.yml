@@ -5,7 +5,7 @@ trigger:
 - stock-news
 - order-page
 - stockpage
-
+-
 pool:
   vmImage: ubuntu-latest
 
@@ -22,8 +22,10 @@ steps:
   fetchDepth: 0
   persistCredentials: true
 
-- script: docker pull postgres:15-alpine
-  displayName: 'Download Postgres Image'
+- script: |
+    sudo systemctl start docker
+    sudo docker pull postgres:15-alpine
+  displayName: 'Start Docker and Download Postgres Image'
 
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
@@ -53,6 +55,8 @@ steps:
       --configuration $(buildConfiguration)
       --no-build
       --settings $(runSettingsFile)
+      --logger "console;verbosity=normal"
+      --collect:"XPlat Code Coverage"
 
 - task: PublishCodeCoverageResults@2
   displayName: 'Publish code coverage'
