@@ -24,7 +24,10 @@ steps:
 
 - script: |
     sudo systemctl start docker
+    sudo usermod -aG docker $USER
+    sudo chmod 666 /var/run/docker.sock
     sudo docker pull postgres:15-alpine
+    docker --version
   displayName: 'Start Docker and Download Postgres Image'
 
 - task: UseDotNet@2
@@ -57,6 +60,8 @@ steps:
       --settings $(runSettingsFile)
       --logger "console;verbosity=normal"
       --collect:"XPlat Code Coverage"
+  env:
+    DOCKER_HOST: unix:///var/run/docker.sock
 
 - task: PublishCodeCoverageResults@2
   displayName: 'Publish code coverage'
