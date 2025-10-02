@@ -98,11 +98,24 @@ namespace TradingApp.Data {
 
             if (rowsAffected != 1) return false;
 
-            // Try to create the user's portfolio (skip if table doesn't exist)
+            // Create the user's portfolio
             try {
                 var userId = await connection.QuerySingleAsync<long>(
                     "SELECT user_id FROM users WHERE email = @Email",
                     new { Email = email });
+
+                // First, ensure the portfolio table exists
+                Console.WriteLine("🔍 DB DEBUG: Creating portfolio table if it doesn't exist...");
+                await connection.ExecuteAsync(@"
+                    CREATE TABLE IF NOT EXISTS portfolio (
+                        user_id BIGINT PRIMARY KEY REFERENCES users(user_id),
+                        value DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+                        net_profit DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+                        percentage_return DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )");
+                Console.WriteLine("🔍 DB DEBUG: Portfolio table creation completed");
 
                 rowsAffected = await connection.ExecuteAsync(
                     "INSERT INTO portfolio " +
@@ -117,11 +130,16 @@ namespace TradingApp.Data {
                     }
                 );
 
+                Console.WriteLine($"🔍 DB DEBUG: Portfolio created successfully for user {userId}");
                 return (rowsAffected == 1);
             } catch (PostgresException ex) when (ex.SqlState == "42P01") {
-                // Portfolio table doesn't exist, but user was created successfully
-                Console.WriteLine("🔍 DB DEBUG: Portfolio table doesn't exist, user created without portfolio");
-                return true;
+                // Portfolio table creation failed
+                Console.WriteLine($"🔍 DB DEBUG: Failed to create portfolio table: {ex.Message}");
+                return false;
+            } catch (Exception ex) {
+                // Portfolio creation failed
+                Console.WriteLine($"🔍 DB DEBUG: Portfolio creation failed: {ex.Message}");
+                return false;
             }
         }
 
