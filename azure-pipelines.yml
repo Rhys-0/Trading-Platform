@@ -10,9 +10,6 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-pool:
-  vmImage: ubuntu-latest
-
 variables:
   buildConfiguration: 'Release'
   dotnetVersion: '9.0.200'
