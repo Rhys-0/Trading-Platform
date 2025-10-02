@@ -24,6 +24,8 @@ steps:
 
 - script: |
     sudo systemctl start docker
+    sudo usermod -aG docker $USER
+    sudo chmod 666 /var/run/docker.sock
     sudo docker pull postgres:15-alpine
   displayName: 'Start Docker and Download Postgres Image'
 
