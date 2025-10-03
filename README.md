@@ -15,8 +15,8 @@
 ### User Portfolio Dashboard
 **Responsible Student:** Enoch \
 **Model Files:** \
-**View / ViewModel Files:** \
-**Other Files:** 
+**View / ViewModel Files:** UserDashboard.razor\
+**Other Files:** GetAllUsers & GetUserById in UserManager
 
 ### Real-time stock price display
 **Responsible Student:** Hoang \
@@ -51,7 +51,7 @@
 ### Administrator dashboard
 **Responsible Student:** Enoch \
 **Model Files:** \
-**View / ViewModel Files:** \
+**View / ViewModel Files:** Userlist.Razor\
 **Other Files:** 
 
 ### Database setup
