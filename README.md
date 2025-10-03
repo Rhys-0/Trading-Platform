@@ -26,9 +26,9 @@
 
 #### Buy / sell order page
 **Responsible Student:** Leo \
-**Model Files:** \
-**View / ViewModel Files:** \
-**Other Files:**  
+**Model Files:**  \
+**View / ViewModel Files:** TradingModal.razor, TradeNotification.razor, Stoc ksPanel.razor (Buy/sell Button) \
+**Other Files:** (Interacts with following models) Trade.cs, Positions.cs, Purchaselot.cs, PortfolioService.cs
 
 #### Transaction history dashboard
 **Responsible Student:** Hoang \
@@ -62,9 +62,9 @@
 
 #### Stock News Page
 **Responsible Student:** Leo \
-**Model Files:** \
-**View / ViewModel Files:** \
-**Other Files:** 
+**Model Files:** NewsService.cs, \
+**View / ViewModel Files:** StockNews.razor, NewsCard.razor\
+**Other Files:**
 
 #### Background Processes
 **Responsible Student:** Rhys \
