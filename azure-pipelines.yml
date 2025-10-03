@@ -5,6 +5,8 @@ trigger:
 - stock-news
 - order-page
 - userdashboard
+- stockpage
+- shilpi-dev
 
 pool:
   vmImage: ubuntu-latest

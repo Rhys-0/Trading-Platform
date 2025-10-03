@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -29,8 +31,8 @@ namespace TradingApp.BackgroundServices {
                 using JsonDocument doc = JsonDocument.Parse(responseStr);
                 decimal currentPrice = doc.RootElement.GetProperty("c").GetDecimal();
 
-                stock.Price = currentPrice;
-                _logger.LogInformation("{Stock}: ${Price}", stock.Symbol, stock.Price);
+                _stocks.SetPrice(stock.Symbol, currentPrice);
+                _logger.LogInformation("{Stock}: ${Price}", stock.Symbol, currentPrice);
             }
         }
 
@@ -54,7 +56,6 @@ namespace TradingApp.BackgroundServices {
                 await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
             }
 
-
             var buffer = new byte[1024 * 4];
             while (!stoppingToken.IsCancellationRequested) {
                 var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
@@ -73,7 +74,31 @@ namespace TradingApp.BackgroundServices {
                         message.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
                     }
 
-                    _logger.LogInformation("Received: {Message}", message);
+                    // parse to json and update
+                    try {
+                        using JsonDocument doc = JsonDocument.Parse(message.ToString());
+
+                        if (doc.RootElement.TryGetProperty("type", out var typeEl) &&
+                            typeEl.ValueKind == JsonValueKind.String &&
+                            typeEl.GetString() == "trade" &&
+                            doc.RootElement.TryGetProperty("data", out var dataEl) &&
+                            dataEl.ValueKind == JsonValueKind.Array) {
+
+                            foreach (var t in dataEl.EnumerateArray()) {
+                                if (!t.TryGetProperty("s", out var sEl) || sEl.ValueKind != JsonValueKind.String) continue;
+                                if (!t.TryGetProperty("p", out var pEl) || pEl.ValueKind != JsonValueKind.Number) continue;
+
+                                string symbol = sEl.GetString()!;
+                                decimal price = pEl.GetDecimal();
+
+                                _stocks.SetPrice(symbol, price);
+                                _logger.LogInformation("Recieved price update: {Symbol} ${Price}", symbol, price);
+                            }
+                        }
+                    }
+                    catch (Exception ex) {
+                        _logger.LogDebug(ex, "Failed to parse frame");
+                    }
                 }
             }
             _logger.LogError("StockPriceService is stopping");

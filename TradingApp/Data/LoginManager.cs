@@ -33,6 +33,36 @@ namespace TradingApp.Data {
         }
 
         /// <summary>
+        /// Return the a user object given the username and hashed password of a user, used to validate user logins.
+        /// </summary>
+        /// <param name="username">The username of the user</param>
+        /// <param name="hashedPassword">The password of the user</param>
+        /// <returns>A User object containing all the information from the user table in the database,
+        /// if no user with the given username and password is found, the function returns null.</returns>
+        public async Task<User?> RetrieveUserByUsername(string username, string hashedPassword) {
+            using var connection = await _connection.CreateConnectionAsync();
+            return await connection.QueryFirstOrDefaultAsync<User>(
+                "SELECT user_id AS id, " +
+                "username, " +
+                "email, " +
+                "first_name AS firstName, " +
+                "last_name AS lastName, " +
+                "starting_cash_balance AS startingCashBalance, " +
+                "current_cash_balance AS currentCashBalance " +
+                "FROM users " +
+                "WHERE username = @Username and password_hash = @HashedPassword",
+                new { Username = username, HashedPassword = hashedPassword });
+        }
+
+        /// <summary>
+        /// Get a database connection for external use.
+        /// </summary>
+        /// <returns>A database connection</returns>
+        public async Task<NpgsqlConnection> GetConnectionAsync() {
+            return (NpgsqlConnection)await _connection.CreateConnectionAsync();
+        }
+
+        /// <summary>
         /// Add a user to the database, typically on the registration page.
         /// </summary>
         /// <param name="username">The username of the user</param>
@@ -69,24 +99,48 @@ namespace TradingApp.Data {
             if (rowsAffected != 1) return false;
 
             // Create the user's portfolio
-            var userId = await connection.QuerySingleAsync<long>(
-                "SELECT user_id FROM users WHERE email = @Email",
-                new { Email = email });
+            try {
+                var userId = await connection.QuerySingleAsync<long>(
+                    "SELECT user_id FROM users WHERE email = @Email",
+                    new { Email = email });
 
-            rowsAffected = await connection.ExecuteAsync(
-                "INSERT INTO portfolio " +
-                "(user_id, value, net_profit, percentage_return) " +
-                "VALUES " +
-                "(@UserId, @Value, @NetProfit, @PercentageReturn)",
-                new {
-                    UserId = userId,
-                    Value = 0.00m,
-                    NetProfit = 0.00m,
-                    PercentageReturn = 0.00m
-                }
-            );
+                // First, ensure the portfolio table exists
+                Console.WriteLine("🔍 DB DEBUG: Creating portfolio table if it doesn't exist...");
+                await connection.ExecuteAsync(@"
+                    CREATE TABLE IF NOT EXISTS portfolio (
+                        user_id BIGINT PRIMARY KEY REFERENCES users(user_id),
+                        value DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+                        net_profit DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+                        percentage_return DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )");
+                Console.WriteLine("🔍 DB DEBUG: Portfolio table creation completed");
 
-            return (rowsAffected == 1);
+                rowsAffected = await connection.ExecuteAsync(
+                    "INSERT INTO portfolio " +
+                    "(user_id, value, net_profit, percentage_return) " +
+                    "VALUES " +
+                    "(@UserId, @Value, @NetProfit, @PercentageReturn)",
+                    new {
+                        UserId = userId,
+                        Value = 0.00m,
+                        NetProfit = 0.00m,
+                        PercentageReturn = 0.00m
+                    }
+                );
+
+                Console.WriteLine($"🔍 DB DEBUG: Portfolio created successfully for user {userId}");
+                return (rowsAffected == 1);
+            } catch (PostgresException ex) when (ex.SqlState == "42P01") {
+                // Portfolio table creation failed
+                Console.WriteLine($"🔍 DB DEBUG: Failed to create portfolio table: {ex.Message}");
+                return false;
+            } catch (Exception ex) {
+                // Portfolio creation failed
+                Console.WriteLine($"🔍 DB DEBUG: Portfolio creation failed: {ex.Message}");
+                return false;
+            }
         }
 
 

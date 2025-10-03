@@ -6,14 +6,14 @@ using System.Data;
 using TradingApp.Data.Interfaces;
 
 namespace TradingApp.Data {
-    internal class DatabaseConnection : IDatabaseConnection {
+    public class DatabaseConnection : IDatabaseConnection {
         private readonly string _connectionString;
         private readonly ILogger<DatabaseConnection>? _logger;
 
         public DatabaseConnection(IConfiguration configuration, ILogger<DatabaseConnection>? logger = null) {
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string not found, add it to your appsettings.json");
-        
+
             _logger = logger;
         }
 

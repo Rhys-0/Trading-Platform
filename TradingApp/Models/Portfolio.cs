@@ -1,7 +1,7 @@
 ﻿
 
 namespace TradingApp.Models {
-    internal sealed class Portfolio {
+    public class Portfolio {
         public long PortfolioId { get; }
         public decimal Value { get; set; }
         public decimal NetProfit { get; set; }

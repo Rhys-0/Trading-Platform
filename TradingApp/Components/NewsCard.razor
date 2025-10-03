@@ -1,18 +1,58 @@
-<div class="card h-100 shadow-sm">
+<div class="news-card card h-100">
     <div class="card-body d-flex flex-column">
-        <h5 class="card-title">@Title</h5>
-        <h6 class="card-subtitle mb-2 text-muted">@Source - @PublishedAt.ToString("MMM dd, yyyy")</h6>
-        <p class="card-text">@Description</p>
-        <a href="@Url" target="_blank" class="mt-auto btn btn-primary">
-            Read More
-        </a>
+        <h5 class="card-title mb-2">@Title</h5>
+        <div class="card-meta mb-2">
+            <span class="source">@Source</span>
+            <span class="date">• @PublishedAt.ToString("MMM dd, yyyy")</span>
+        </div>
+        <p class="card-text flex-grow-1">@Description</p>
+        <a href="@Url" target="_blank" class="btn btn-primary mt-auto">Read More</a>
     </div>
 </div>
 
+<style>
+.news-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-title {
+    color: #2D3748;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.card-meta {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.card-text {
+    color: #4A5568;
+    line-height: 1.5;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #6b46c1 0%, #4299e1 100%);
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+</style>
+
 @code {
-    [Parameter] public string Title { get; set; } = string.Empty;
-    [Parameter] public string Description { get; set; } = string.Empty;
-    [Parameter] public string Url { get; set; } = string.Empty;
-    [Parameter] public DateTime PublishedAt { get; set; }
+    [Parameter] public required string Title { get; set; }
+    [Parameter] public required string Description { get; set; }
+    [Parameter] public required string Url { get; set; }
+    [Parameter] public required DateTime PublishedAt { get; set; }
     [Parameter] public string Source { get; set; } = "Unknown";
 }
