@@ -1,6 +1,6 @@
 ﻿namespace TradingApp.Models {
     internal class Stocks {
-        internal Dictionary<string, Stock> StockList { get; }
+        internal Dictionary<string, Stock> StockList { get; } = new Dictionary<string, Stock>();
 
         public Stocks() {
             StockList = new Dictionary<string, Stock> {
