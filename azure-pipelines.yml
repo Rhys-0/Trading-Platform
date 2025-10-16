@@ -2,6 +2,11 @@ trigger:
 - main
 - pipeline-dev
 - database-dev
+- stock-news
+- order-page
+- stockpage
+- userdashboard
+- shilpi-dev
 - background-processes-dev
 
 pool:

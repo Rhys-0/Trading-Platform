@@ -1,0 +1,55 @@
+@page "/admin"
+@rendermode InteractiveServer
+@using TradingApp.Data
+@using TradingApp.Models
+@inject UserManager UserManager
+@inject NavigationManager Navigation
+
+
+<h2>Admin Panel</h2>
+
+@if (Users == null)
+{
+    <p>Users not found</p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Users)
+            {
+                <tr>
+                    <td>@user.Username</td>
+                    <td>@user.Email</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" @onclick="() => ViewUser(user)">
+                            View Dashboard
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<User>? Users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await UserManager.GetAllUsers();
+    }
+
+    private void ViewUser(User user)
+    {
+        Console.WriteLine($"Admin selected: {user.Username}");
+        Navigation.NavigateTo($"/dashboard/{user.Id}");
+    }
+}

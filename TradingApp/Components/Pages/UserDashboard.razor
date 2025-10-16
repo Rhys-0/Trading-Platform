@@ -1,0 +1,217 @@
+﻿@page "/portfolio"
+@page "/portfolio/{UserId:long?}"
+@rendermode InteractiveServer
+@using TradingApp.Data
+@using TradingApp.Data.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using TradingApp.Models
+@inject AuthenticationStateProvider AuthStateProvider
+@inject TradingApp.Services.UserService UserService
+@inject TradingApp.Services.PortfolioService PortfolioService
+@inject TradingApp.Models.Stocks Stocks
+@inject UserManager UserManager
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="container-fluid">
+    <div class="row g-4 mt-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm rounded-3 p-3">
+                <h2 class="h5 text-muted mb-2">Portfolio Value</h2>
+                <p class="fs-2 fw-bold text-primary mb-0">@TotalValue.ToString("C")</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm rounded-3 p-3">
+                <h2 class="h5 text-muted mb-2">Change (24hrs)</h2>
+                <p class="fs-2 fw-bold @(FlatChange >= 0 ? "text-success" : "text-danger") mb-0">
+                    @(FlatChange >= 0 ? "+" : "")@FlatChange.ToString("C")
+                    <span class="fs-6 fw-normal">(@(PercentageChange >= 0 ? "+" : "")@PercentageChange.ToString("P"))</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5" />
+
+    <!-- FOR TESTING -->
+    <div class="mb-4">
+        <button class="btn btn-sm btn-primary me-2" @onclick="CreateTestUser">Create Test Account</button>
+        <button class="btn btn-sm btn-success" @onclick="BuyTestStock">Buy Test Stock</button>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card shadow-sm rounded-3 p-4">
+                <h2 class="h4 text-muted mb-4">Holdings Breakdown</h2>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Ticker</th>
+                                <th>Quantity</th>
+                                <th>Avg. Price</th>
+                                <th>Current Price</th>
+                                <th>Daily Change</th>
+                                <th>Portfolio Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var holding in Holdings)
+                            {
+                                <tr>
+                                    <td>@holding.Name</td>
+                                    <td>@holding.Ticker</td>
+                                    <td>@holding.Quantity</td>
+                                    <td>@holding.AveragePrice.ToString("C")</td>
+                                    <td>@holding.CurrentPrice.ToString("C")</td>
+                                    <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
+                                        @(holding.DailyChange >= 0 ? "+" : "")@holding.DailyChange.ToString("P")
+                                    </td>
+                                    <td>@((holding.PortfolioWeight * 100).ToString("N2"))%</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public class Holding
+    {
+        public string Ticker { get; set; }
+        public string Name { get; set; }
+        public int Quantity { get; set; }
+        public decimal AveragePrice { get; set; }
+        public decimal CurrentPrice { get; set; }
+        public decimal DailyChange { get; set; }
+        public decimal PortfolioWeight { get; set; }
+    }
+
+    private List<Holding> Holdings = new();
+    private decimal FlatChange => Holdings.Sum(h => (h.CurrentPrice - h.AveragePrice) * h.Quantity);
+    private decimal TotalValue => Holdings.Sum(h => h.CurrentPrice * h.Quantity);
+    private decimal PercentageChange => TotalValue != 0 ? FlatChange / (TotalValue - FlatChange) : 0;
+    private TradingApp.Models.User testUser;
+
+    [Parameter]
+    public long? UserId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserId.HasValue)
+        {
+            var user = await UserManager.GetUserById(UserId.Value);
+            if (user != null)
+            {
+                await UserManager.LoadUserPortfolio(user);
+
+                PortfolioService.UpdateUserPortfolio(user);
+
+                await LoadHoldingsAsync(user);
+            }
+        }
+        else
+        {
+            await LoadHoldingsAsync();
+        }
+    }
+
+
+    private async Task LoadHoldingsAsync(User overrideUser = null)
+    {
+        User user;
+
+        if (overrideUser != null)
+        {
+            user = overrideUser;
+        }
+        else
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userIdentity = authState.User;
+
+            if (!userIdentity.Identity.IsAuthenticated)
+                return;
+
+            user = await UserService.GetCurrentUserAsync(userIdentity);
+            if (user?.Portfolio?.Positions == null)
+                return;
+
+            PortfolioService.UpdateUserPortfolio(user);
+        }
+
+        if (user?.Portfolio?.Positions == null)
+        {
+            Holdings.Clear();
+            StateHasChanged();
+            return;
+        }
+
+        Holdings = user.Portfolio.Positions.Values.Select(p =>
+        {
+            if (!Stocks.StockList.TryGetValue(p.StockSymbol, out var stock))
+                return null;
+
+            decimal avgPrice = p.PurchaseLots?.Any() == true
+                ? p.PurchaseLots.Average(lot => lot.PurchasePrice)
+                : 0;
+
+            decimal dailyChange = avgPrice != 0 ? (stock.Price - avgPrice) / avgPrice : 0;
+
+            return new Holding
+            {
+                Ticker = p.StockSymbol,
+                Name = stock.Name,
+                Quantity = p.TotalQuantity,
+                AveragePrice = avgPrice,
+                CurrentPrice = stock.Price,
+                DailyChange = dailyChange,
+                PortfolioWeight = 0
+            };
+        })
+        .Where(h => h != null)
+        .Cast<Holding>()
+        .ToList();
+
+        var totalValue = Holdings.Sum(h => h.CurrentPrice * h.Quantity);
+        foreach (var h in Holdings)
+        {
+            h.PortfolioWeight = totalValue != 0 ? (h.CurrentPrice * h.Quantity) / totalValue : 0;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task CreateTestUser()
+    {
+        testUser = new User(
+            id: 67,
+            username: "TestUser",
+            email: "test@email.com",
+            firstName: "Test",
+            lastName: "Name",
+            startingCashBalance: 10_000m,
+            currentCashBalance: 10_000m
+        );
+
+        testUser.Portfolio = new Portfolio(testUser.Id, 0m, 0m, 0m);
+
+        await LoadHoldingsAsync(testUser);
+    }
+
+    private async Task BuyTestStock()
+    {
+        
+        if (testUser?.Portfolio == null) return;
+
+        testUser.Portfolio.AddStocks("AAPL", 1, 150m);
+
+        await LoadHoldingsAsync(testUser);
+    }
+}
