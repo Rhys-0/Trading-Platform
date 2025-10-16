@@ -1,0 +1,436 @@
+@page "/leaderboard"
+@rendermode InteractiveServer
+
+<PageTitle>Leaderboard - TradingApp</PageTitle>
+
+<div class="leaderboard-container">
+    <div class="leaderboard-header">
+        <div class="header-content">
+            <h1><i class="bi bi-trophy"></i> Trading Leaderboard</h1>
+            <p>See how you rank against other traders</p>
+        </div>
+        
+        <div class="sorting-controls">
+            <div class="sort-buttons">
+                <button class="btn btn-primary @(_currentSort == SortType.Overall ? "active" : "")" 
+                        @onclick="() => SortLeaderboard(SortType.Overall)">
+                    <i class="bi bi-list-ol"></i>
+                    Overall Ranking
+                </button>
+                <button class="btn btn-success @(_currentSort == SortType.Gains ? "active" : "")" 
+                        @onclick="() => SortLeaderboard(SortType.Gains)">
+                    <i class="bi bi-arrow-up-circle"></i>
+                    Top Gainers
+                </button>
+                <button class="btn btn-danger @(_currentSort == SortType.Losses ? "active" : "")" 
+                        @onclick="() => SortLeaderboard(SortType.Losses)">
+                    <i class="bi bi-arrow-down-circle"></i>
+                    Biggest Losses
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (_isLoading) {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading leaderboard...</p>
+        </div>
+    } else if (_leaderboardEntries.Any()) {
+        <div class="leaderboard-content">
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number">@_leaderboardEntries.Count</div>
+                        <div class="stat-label">Total Traders</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number">@_profitableTraders</div>
+                        <div class="stat-label">Profitable</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-graph-down-arrow"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number">@_losingTraders</div>
+                        <div class="stat-label">At Loss</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="leaderboard-table">
+                <div class="table-header">
+                    <div class="rank-col">Rank</div>
+                    <div class="trader-col">Trader</div>
+                    <div class="balance-col">Current Balance</div>
+                    <div class="profit-col">Profit/Loss</div>
+                    <div class="percentage-col">% Return</div>
+                </div>
+
+                @foreach (var entry in _leaderboardEntries) {
+                    <div class="leaderboard-row @(entry.UserId == _currentUserId ? "current-user" : "")">
+                        <div class="rank-col">
+                            <div class="rank-badge rank-@GetRankClass(entry.Rank)">
+                                @if (entry.Rank <= 3) {
+                                    <i class="bi bi-trophy"></i>
+                                }
+                                @entry.Rank
+                            </div>
+                        </div>
+                        <div class="trader-col">
+                            <div class="trader-info">
+                                <div class="trader-name">@entry.FirstName @entry.LastName</div>
+                                <div class="trader-username">@@@entry.Username</div>
+                            </div>
+                        </div>
+                        <div class="balance-col">
+                            <div class="balance-amount">$@entry.CurrentBalance.ToString("N2")</div>
+                        </div>
+                        <div class="profit-col">
+                            <div class="profit-amount @(entry.NetProfit >= 0 ? "profit" : "loss")">
+                                @if (entry.NetProfit >= 0) {
+                                    <i class="bi bi-arrow-up"></i>
+                                } else {
+                                    <i class="bi bi-arrow-down"></i>
+                                }
+                                $@Math.Abs(entry.NetProfit).ToString("N2")
+                            </div>
+                        </div>
+                        <div class="percentage-col">
+                            <div class="percentage-return @(entry.PercentageReturn >= 0 ? "profit" : "loss")">
+                                @if (entry.PercentageReturn >= 0) {
+                                    <i class="bi bi-arrow-up"></i>
+                                } else {
+                                    <i class="bi bi-arrow-down"></i>
+                                }
+                                @entry.PercentageReturn.ToString("F2")%
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    } else {
+        <div class="no-data">
+            <i class="bi bi-exclamation-circle"></i>
+            <h3>No Data Available</h3>
+            <p>No trading data found. Start trading to see the leaderboard!</p>
+        </div>
+    }
+</div>
+
+<style>
+.leaderboard-container {
+    min-height: 100vh;
+    background: #f8fafc;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.leaderboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+}
+
+.header-content h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.header-content p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+}
+
+.sorting-controls {
+    margin-top: 1rem;
+}
+
+.sort-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.sort-buttons .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sort-buttons .btn:hover {
+    transform: translateY(-2px);
+}
+
+.sort-buttons .btn.active {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+}
+
+.spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.leaderboard-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: #667eea;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.stat-label {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.leaderboard-table {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 150px 150px 120px;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #f8fafc;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 150px 150px 120px;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s;
+}
+
+.leaderboard-row:hover {
+    background: #f8fafc;
+}
+
+.leaderboard-row.current-user {
+    background: #eff6ff;
+    border-left: 4px solid #667eea;
+}
+
+.rank-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-weight: 700;
+    color: white;
+    gap: 0.25rem;
+}
+
+.rank-1 { background: #ffd700; }
+.rank-2 { background: #c0c0c0; }
+.rank-3 { background: #cd7f32; }
+.rank-other { background: #6b7280; }
+
+.trader-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.trader-name {
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.trader-username {
+    font-size: 0.9rem;
+    color: #718096;
+}
+
+.balance-amount {
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.profit-amount, .percentage-return {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.profit {
+    color: #059669;
+}
+
+.loss {
+    color: #dc2626;
+}
+
+.no-data {
+    text-align: center;
+    padding: 4rem;
+    color: #718096;
+}
+
+.no-data i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #cbd5e1;
+}
+
+.no-data h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+@@media (max-width: 768px) {
+    .table-header,
+    .leaderboard-row {
+        grid-template-columns: 60px 1fr 120px 120px 100px;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .sort-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .sort-buttons .btn {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .stats-summary {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+@code {
+    private List<TradingApp.Models.LeaderboardEntry> _leaderboardEntries = new();
+    private bool _isLoading = true;
+    private int _currentUserId = 1; // This would come from the authenticated user
+    private SortType _currentSort = SortType.Overall;
+    private int _profitableTraders = 0;
+    private int _losingTraders = 0;
+
+    [Inject] private TradingApp.Models.Interfaces.ILeaderboardService LeaderboardService { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync() {
+        await LoadLeaderboard();
+    }
+
+    private async Task LoadLeaderboard() {
+        _isLoading = true;
+        try {
+            switch (_currentSort) {
+                case SortType.Overall:
+                    _leaderboardEntries = await LeaderboardService.GetLeaderboardAsync();
+                    break;
+                case SortType.Gains:
+                    _leaderboardEntries = await LeaderboardService.GetLeaderboardSortedByGainsAsync();
+                    break;
+                case SortType.Losses:
+                    _leaderboardEntries = await LeaderboardService.GetLeaderboardSortedByLossesAsync();
+                    break;
+            }
+            
+            // Calculate stats
+            _profitableTraders = _leaderboardEntries.Count(e => e.PercentageReturn >= 0);
+            _losingTraders = _leaderboardEntries.Count(e => e.PercentageReturn < 0);
+        } catch (Exception ex) {
+            Console.WriteLine($"Error loading leaderboard: {ex.Message}");
+            _leaderboardEntries = new List<TradingApp.Models.LeaderboardEntry>();
+        } finally {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SortLeaderboard(SortType sortType) {
+        _currentSort = sortType;
+        await LoadLeaderboard();
+    }
+
+    private string GetRankClass(int rank) {
+        if (rank <= 3) return rank.ToString();
+        return "other";
+    }
+
+    private enum SortType {
+        Overall,
+        Gains,
+        Losses
+    }
+}
+

@@ -1,122 +1,251 @@
 ﻿@page "/dashboard"
 @rendermode InteractiveServer
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>Dashboard - TradingApp</PageTitle>
 
-<div class="container-fluid">
-    <div class="row g-4 mt-3">
-        <div class="col-lg-3 col-md-6">
-            <div class="card shadow-sm rounded-3 p-3">
-                <h2 class="h5 text-muted mb-2">Portfolio Value</h2>
-                <p class="fs-2 fw-bold text-primary mb-0">@TotalValue.ToString("C")</p>
-            </div>
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="user-info">
+            <h1>Welcome back, @AuthService.CurrentUser?.FirstName!</h1>
+            <p>Dashboard Overview</p>
         </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="card shadow-sm rounded-3 p-3">
-                <h2 class="h5 text-muted mb-2">Change (24hrs)</h2>
-                <p class="fs-2 fw-bold @(FlatChange >= 0 ? "text-success" : "text-danger") mb-0">
-                    @(FlatChange >= 0 ? "+" : "")@FlatChange.ToString("C")
-                    <span class="fs-6 fw-normal">(@(PercentageChange >= 0 ? "+" : "")@PercentageChange.ToString("P"))</span>
-                </p>
-            </div>
+        <div class="user-actions">
+            <button class="btn btn-outline-danger" @onclick="Logout">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </button>
         </div>
     </div>
-    
-    <hr class="my-5" />
 
-    <div class="row g-4">
-        <div class="col-12">
-            <div class="card shadow-sm rounded-3 p-4">
-                <h2 class="h4 text-muted mb-4">Holdings Breakdown</h2>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Ticker</th>
-                                <th>Quantity</th>
-                                <th>Avg. Price</th>
-                                <th>Current Price</th>
-                                <th>Daily Change</th>
-                                <th>Portfolio Weight</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var holding in Holdings)
-                            {
-                                <tr>
-                                    <td>@holding.Ticker</td>
-                                    <td>@holding.Name</td>
-                                    <td>@holding.Quantity</td>
-                                    <td>@holding.AveragePrice.ToString("C")</td>
-                                    <td>@holding.CurrentPrice.ToString("C")</td>
-                                    <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
-                                        @(holding.DailyChange >= 0 ? "+" : "")@holding.DailyChange.ToString("P")
-                                    </td>
-                                    <td>@((holding.PortfolioWeight * 100).ToString("N2"))%</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+    @if (AuthService.IsAuthenticated && AuthService.CurrentUser != null) {
+        <div class="dashboard-content">
+            <div class="user-profile-card">
+                <h3><i class="bi bi-person-circle"></i> Profile Information</h3>
+                <div class="profile-details">
+                    <div class="detail-item">
+                        <label>Username:</label>
+                        <span>@AuthService.CurrentUser.Username</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Email:</label>
+                        <span>@AuthService.CurrentUser.Email</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Full Name:</label>
+                        <span>@AuthService.CurrentUser.FirstName @AuthService.CurrentUser.LastName</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Starting Balance:</label>
+                        <span>$@AuthService.CurrentUser.StartingCashBalance.ToString("N2")</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Current Balance:</label>
+                        <span class="balance">$@AuthService.CurrentUser.CurrentCashBalance.ToString("N2")</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <h3><i class="bi bi-lightning"></i> Quick Actions</h3>
+                <div class="action-buttons">
+                    <a href="/stocks" class="action-btn">
+                        <i class="bi bi-graph-up"></i>
+                        Browse Stocks
+                    </a>
+                    <a href="/leaderboard" class="action-btn">
+                        <i class="bi bi-trophy"></i>
+                        Leaderboard
+                    </a>
+                    <a href="/portfolio" class="action-btn">
+                        <i class="bi bi-briefcase"></i>
+                        View Portfolio
+                    </a>
+                    <a href="/trades" class="action-btn">
+                        <i class="bi bi-arrow-left-right"></i>
+                        Trade History
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
+    } else {
+        <div class="not-authenticated">
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <h4>Not Authenticated</h4>
+                <p>You need to be logged in to view the dashboard.</p>
+                <a href="/login" class="btn btn-primary">Login</a>
+            </div>
+        </div>
+    }
 </div>
 
-@code {
-    public class Holding
-    {
-        public string Ticker { get; set; }
-        public string Name { get; set; }
-        public int Quantity { get; set; }
-        public decimal AveragePrice { get; set; }
-        public decimal CurrentPrice { get; set; }
-        public decimal PriceChange { get; set; }
-        public decimal DailyChange => PriceChange / (CurrentPrice - PriceChange);
-        public decimal PortfolioWeight { get; set; }
+<style>
+.dashboard-container {
+    padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.user-info h1 {
+    color: #2d3748;
+    margin: 0;
+    font-size: 2rem;
+}
+
+.user-info p {
+    color: #718096;
+    margin: 0.5rem 0 0 0;
+}
+
+.user-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.user-profile-card,
+.quick-actions {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.user-profile-card h3,
+.quick-actions h3 {
+    color: #2d3748;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f7fafc;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.detail-item span {
+    color: #2d3748;
+}
+
+.detail-item .balance {
+    font-weight: 700;
+    color: #38a169;
+    font-size: 1.1rem;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: #2d3748;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.action-btn:hover {
+    background: #edf2f7;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    text-decoration: none;
+    color: #2d3748;
+}
+
+.action-btn i {
+    font-size: 1.2rem;
+    color: #667eea;
+}
+
+.not-authenticated {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+.alert {
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+    max-width: 400px;
+}
+
+.alert-warning {
+    background: #fef5e7;
+    border: 1px solid #f6e05e;
+    color: #744210;
+}
+
+.alert h4 {
+    margin: 1rem 0 0.5rem 0;
+}
+
+.alert p {
+    margin-bottom: 1.5rem;
+}
+
+@@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
     }
+    
+    .dashboard-content {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 
-    private List<Holding> Holdings = new();
-    private decimal FlatChange => Holdings.Sum(h => h.PriceChange * h.Quantity);
-    private decimal TotalValue => Holdings.Sum(h => h.CurrentPrice * h.Quantity);
-    private decimal PercentageChange => FlatChange / (TotalValue - FlatChange);
+@code {
+    [Inject] private TradingApp.Data.Interfaces.IAuthenticationService AuthService { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
 
-    protected override void OnInitialized()
-    {
-        // Placeholder data waiting to connect to databse
-        Holdings.Add(new Holding
-        {
-            Ticker = "AAPL",
-            Name = "Apple Inc.",
-            Quantity = 50,
-            AveragePrice = 125.00m,
-            CurrentPrice = 150.00m,
-            PriceChange = 1.50m
-        });
-        Holdings.Add(new Holding
-        {
-            Ticker = "MSFT",
-            Name = "Microsoft Corp.",
-            Quantity = 25,
-            AveragePrice = 300.00m,
-            CurrentPrice = 400.00m,
-            PriceChange = 10.00m
-        });
-        Holdings.Add(new Holding
-        {
-            Ticker = "GOOGL",
-            Name = "Alphabet Inc.",
-            Quantity = 10,
-            AveragePrice = 1200.00m,
-            CurrentPrice = 1000.00m,
-            PriceChange = -5.00m
-        });
-
-        var totalStockValue = Holdings.Sum(h => h.CurrentPrice * h.Quantity);
-        foreach (var holding in Holdings)
-        {
-            holding.PortfolioWeight = (holding.CurrentPrice * holding.Quantity) / totalStockValue;
-        }
+    private async Task Logout() {
+        await AuthService.LogoutAsync();
+        Nav.NavigateTo("/");
     }
 }

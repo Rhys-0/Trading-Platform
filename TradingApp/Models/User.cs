@@ -2,18 +2,21 @@
 
 
 namespace TradingApp.Models {
-    internal sealed class User {
-        public long Id { get; }
-        public string Username { get; } // No set needed unless users being able to change their username is implemented
-        public string Email { get; } // No set needed unless users being able to change their emails is implemented
-        public string FirstName { get; }
-        public string LastName { get; }
-        public decimal StartingCashBalance { get; }
-        public decimal CurrentCashBalance { get; private set; }
+    public class User {
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty; // No set needed unless users being able to change their username is implemented
+        public string Email { get; set; } = string.Empty; // No set needed unless users being able to change their emails is implemented
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public decimal StartingCashBalance { get; set; }
+        public decimal CurrentCashBalance { get; set; }
         public Portfolio? Portfolio { get; set; }
         public List<Trade>? Trades { get; set; }
 
-        internal User(long id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
+        // Parameterless constructor for Dapper
+        public User() { }
+
+        public User(int id, string username, string email, string firstName, string lastName, decimal startingCashBalance, decimal currentCashBalance) {
             ArgumentOutOfRangeException.ThrowIfNegative(startingCashBalance);
             
             Id = id;

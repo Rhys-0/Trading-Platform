@@ -1,7 +1,7 @@
 ﻿
 
 namespace TradingApp.Models {
-    internal sealed class Trade {
+    public class Trade {
         public long TradeId { get; }
         public string TradeType { get; }
         public string StockSymbol { get; }

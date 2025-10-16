@@ -1,7 +1,7 @@
 ﻿
 
 namespace TradingApp.Models {
-    internal sealed class Position {
+    public class Position {
         public long PositionId { get; set; }
         public string StockSymbol { get; }
         public int TotalQuantity { get; set; }

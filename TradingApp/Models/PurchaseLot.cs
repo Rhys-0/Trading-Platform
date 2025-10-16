@@ -1,7 +1,7 @@
 ﻿
 
 namespace TradingApp.Models {
-    internal sealed class PurchaseLot {
+    public class PurchaseLot {
         public long PurchaseLotId { get; set; }
 
         public int Quantity { get; set; }
