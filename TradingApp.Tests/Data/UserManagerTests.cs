@@ -533,6 +533,7 @@ namespace TradingApp.Tests.Data {
 
             // Act
             var user = await userManager.GetUserById(99);
+            await userManager.LoadUserPortfolio(user!);
 
             // Assert
             Assert.NotNull(user);
