@@ -515,13 +515,16 @@ namespace TradingApp.Tests.Data {
             await _db.ResetDatabaseAsync();
 
             await _db.ExecuteAsync(@"
-                INSERT INTO users (user_id, username, email, password_hash, first_name, last_name, starting_cash_balance, current_cash_balance)
-                VALUES (99, 'iduser', 'id@email.com', 'hashed', 'ID', 'User', 500.00, 500.00);");
-            
-            // Insert a portfolio for the user
+                INSERT INTO users (username, email, password_hash, first_name, last_name, starting_cash_balance, current_cash_balance)
+                VALUES ('iduser', 'id@email.com', 'hashed', 'ID', 'User', 500.00, 500.00);");
+
+            var userId = await _db.QueryFirstOrDefaultAsync<int>(@"
+                SELECT user_id FROM users WHERE username = 'iduser';");
+
             await _db.ExecuteAsync(@"
                 INSERT INTO portfolio (user_id, value, net_profit, percentage_return)
-                VALUES (99, 1000.00, 500.00, 0.5);");
+                VALUES (@UserId, 1000.00, 500.00, 0.5);",
+                new { UserId = userId });
 
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?> {
@@ -532,12 +535,12 @@ namespace TradingApp.Tests.Data {
             var userManager = new UserManager(new DatabaseConnection(config));
 
             // Act
-            var user = await userManager.GetUserById(99);
+            var user = await userManager.GetUserById(userId);
             await userManager.LoadUserPortfolio(user!);
 
             // Assert
             Assert.NotNull(user);
-            Assert.Equal(99, user!.Id);
+            Assert.Equal(userId, user!.Id);
             Assert.Equal("iduser", user.Username);
             Assert.NotNull(user.Portfolio);
             Assert.Equal(1000.00m, user.Portfolio!.Value);
