@@ -457,5 +457,109 @@ namespace TradingApp.Tests.Data {
             Assert.Null(user.Trades);
             Assert.Equal("Invalid trade type. Must be 'BUY' or 'SELL'.", ex.Message);
         }
+
+        [Fact]
+        public async Task GetAllUsers_WithMultipleUsers_ShouldReturnAllUsers() {
+            // Arrange
+            await _db.ResetDatabaseAsync();
+
+            await _db.ExecuteAsync(@"
+                INSERT INTO users (username, email, password_hash, first_name, last_name, starting_cash_balance, current_cash_balance)
+                VALUES 
+                    ('user1', 'user1@email.com', 'h1', 'First1', 'Last1', 1000.00, 100.00),
+                    ('user2', 'user2@email.com', 'h2', 'First2', 'Last2', 2000.00, 200.00),
+                    ('user3', 'user3@email.com', 'h3', 'First3', 'Last3', 3000.00, 300.00);");
+
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> {
+                    {"ConnectionStrings:DefaultConnection", _db.ConnectionString}
+                })
+                .Build();
+
+            var userManager = new UserManager(new DatabaseConnection(config));
+
+            // Act
+            var users = await userManager.GetAllUsers();
+
+            // Assert
+            Assert.NotNull(users);
+            Assert.Equal(3, users.Count);
+            Assert.Contains(users, u => u.Username == "user1" && u.FirstName == "First1" && u.CurrentCashBalance == 100.00m);
+            Assert.Contains(users, u => u.Username == "user2" && u.FirstName == "First2" && u.CurrentCashBalance == 200.00m);
+        }
+
+        [Fact]
+        public async Task GetAllUsers_WithNoUsers_ShouldReturnEmptyList() {
+            // Arrange
+            await _db.ResetDatabaseAsync();
+
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> {
+                    {"ConnectionStrings:DefaultConnection", _db.ConnectionString}
+                })
+                .Build();
+
+            var userManager = new UserManager(new DatabaseConnection(config));
+
+            // Act
+            var users = await userManager.GetAllUsers();
+
+            // Assert
+            Assert.NotNull(users);
+            Assert.Empty(users);
+        }
+
+        [Fact]
+        public async Task GetUserById_WithValidIdAndPortfolio_ShouldGetUserAndLoadPortfolio() {
+            // Arrange
+            await _db.ResetDatabaseAsync();
+
+            await _db.ExecuteAsync(@"
+                INSERT INTO users (user_id, username, email, password_hash, first_name, last_name, starting_cash_balance, current_cash_balance)
+                VALUES (99, 'iduser', 'id@email.com', 'hashed', 'ID', 'User', 500.00, 500.00);");
+            
+            // Insert a portfolio for the user
+            await _db.ExecuteAsync(@"
+                INSERT INTO portfolio (user_id, value, net_profit, percentage_return)
+                VALUES (99, 1000.00, 500.00, 0.5);");
+
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> {
+                    {"ConnectionStrings:DefaultConnection", _db.ConnectionString}
+                })
+                .Build();
+
+            var userManager = new UserManager(new DatabaseConnection(config));
+
+            // Act
+            var user = await userManager.GetUserById(99);
+
+            // Assert
+            Assert.NotNull(user);
+            Assert.Equal(99, user!.Id);
+            Assert.Equal("iduser", user.Username);
+            Assert.NotNull(user.Portfolio);
+            Assert.Equal(1000.00m, user.Portfolio!.Value);
+        }
+
+        [Fact]
+        public async Task GetUserById_WithNonExistentId_ShouldReturnNull() {
+            // Arrange
+            await _db.ResetDatabaseAsync();
+            
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> {
+                    {"ConnectionStrings:DefaultConnection", _db.ConnectionString}
+                })
+                .Build();
+
+            var userManager = new UserManager(new DatabaseConnection(config));
+
+            // Act
+            var user = await userManager.GetUserById(999);
+
+            // Assert
+            Assert.Null(user);
+        }
     }
 }
