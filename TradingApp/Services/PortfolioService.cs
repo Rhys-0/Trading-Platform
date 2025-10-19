@@ -18,6 +18,9 @@ namespace TradingApp.Services {
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="KeyNotFoundException"></exception>
         internal void UpdateUserPortfolio(User user) {
+            if (user is null) {
+                return;
+            }
             if(user.Portfolio == null || user.Portfolio.Positions == null) {
                 throw new InvalidOperationException("User does not have a portfolio to update, ensure it is loaded first.");
             }

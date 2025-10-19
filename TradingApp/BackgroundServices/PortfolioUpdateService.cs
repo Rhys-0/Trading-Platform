@@ -29,13 +29,15 @@ namespace TradingApp.BackgroundServices {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
             while (!stoppingToken.IsCancellationRequested) {
+                _logger.LogInformation("updating portfolios");
                 var users = await _userManager.GetAllUsers();
                 foreach (User user in users) {
+                    _logger.LogInformation("Updating {User}", user.Email);
+                    await _userManager.LoadUserPortfolio(user);
                     _portfolioService.UpdateUserPortfolio(user);
                     await _userManager.UpdatePortfolio(user.Portfolio!);
-
-                    await Task.Delay(60000, stoppingToken);
                 }
+                await Task.Delay(60000, stoppingToken);
             }
         }
     }
