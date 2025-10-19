@@ -40,19 +40,6 @@ steps:
     command: 'restore'
     projects: '**/*.sln'
 
-# Prepare SonarCloud analysis
-- task: SonarCloudPrepare@3
-  displayName: 'Prepare SonarCloud analysis'
-  inputs:
-    SonarCloud: 'SonarQube-Connection'
-    organization: 'rhys-0'
-    scannerMode: 'dotnet'
-    projectKey: 'Rhys-0_Trading-Platform'
-    extraProperties: |
-      sonar.test.inclusions=**/TradingApp.Tests/**/*.cs
-      sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/coverage.opencover.xml
-      sonar.coverage.exclusions=**/Program.cs,**/*.razor,**/wwwroot/**
-
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
@@ -76,6 +63,3 @@ steps:
     codeCoverageTool: 'OpenCover'
     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
     reportDirectory: '$(Agent.TempDirectory)'
-
-- task: SonarCloudAnalyze@3
-  displayName: 'Run SonarCloud analysis'

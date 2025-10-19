@@ -32,6 +32,7 @@ builder.Services.AddScoped<NewsService>();
 
 // Background Services
 builder.Services.AddHostedService<StockPriceService>();
+builder.Services.AddHostedService<PortfolioUpdateService>();
 
 // Authentication service
 builder.Services.AddScoped<TradingApp.Data.Interfaces.IAuthenticationService, TradingApp.Data.AuthenticationService>();
