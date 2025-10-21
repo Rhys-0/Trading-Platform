@@ -1,6 +1,7 @@
 ﻿@page "/trades"
 @rendermode InteractiveServer
 @using TradingApp.Models
+@using Microsoft.AspNetCore.Components.Forms
 @inject TradingApp.Data.Interfaces.ITradeManager TradeManager
 @inject TradingApp.Data.Interfaces.IAuthenticationService AuthService
 @inject IJSRuntime JS
@@ -22,13 +23,13 @@
   {
       <div class="filters">
         <input class="form-control" placeholder="Symbol (e.g., TSLA)" @bind="_symbolFilter" @oninput="(_)=>ApplyFiltersAndSort()" />
-        <select class="form-select" @bind="_typeFilter" @onchange="(_)=>ApplyFiltersAndSort()">
+        <select class="form-select" @bind="_typeFilter" @bind:after="ApplyFiltersAndSort">
             <option value="">All</option>
             <option>Buy</option>
             <option>Sell</option>
         </select>
-        <input class="form-control" type="date" @bind="_fromDate" @onchange="(_)=>ApplyFiltersAndSort()" />
-        <input class="form-control" type="date" @bind="_toDate" @onchange="(_)=>ApplyFiltersAndSort()" />
+        <InputDate @bind-Value="_fromDate" @bind-Value:after="ApplyFiltersAndSort" class="form-control" />
+        <InputDate @bind-Value="_toDate" @bind-Value:after="ApplyFiltersAndSort" class="form-control" />
         <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
         <div class="spacer"></div>
         <button class="btn btn-outline-primary" @onclick="ExportCsv">Export CSV</button>
@@ -92,8 +93,8 @@ th[role="button"] { user-select:none; cursor:pointer; }
     // filters
     private string _symbolFilter = "";
     private string _typeFilter = "";
-    private string? _fromDate;
-    private string? _toDate;
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
 
     // sort
     private string _sortBy = nameof(Trade.Time);
@@ -122,11 +123,11 @@ th[role="button"] { user-select:none; cursor:pointer; }
         if (!string.IsNullOrEmpty(_typeFilter))
             q = q.Where(t => string.Equals(t.TradeType, _typeFilter, StringComparison.OrdinalIgnoreCase));
 
-        if (DateTime.TryParse(_fromDate, out var from))
+        if (_fromDate is DateTime from)
             q = q.Where(t => t.Time >= from);
 
-        if (DateTime.TryParse(_toDate, out var to))
-            q = q.Where(t => t.Time <= to.AddDays(1).AddTicks(-1)); // inclusive
+        if (_toDate is DateTime to)
+			q = q.Where(t => t.Time <= to.Date.AddDays(1).AddTicks(-1)); //inclusive end of day
 
         q = (_sortBy, _sortAsc) switch {
             (nameof(Trade.StockSymbol), true) => q.OrderBy(t => t.StockSymbol),
