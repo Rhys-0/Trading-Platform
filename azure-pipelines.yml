@@ -65,7 +65,7 @@ steps:
     reportDirectory: '$(Agent.TempDirectory)'
 
 - task: AzureWebApp@1
-  displayName: 'Deploy Blazor App via Federated Identity'
+  displayName: 'Deploy Blazor App'
   inputs:
     azureSubscription: 'Deployment-Connection'
     appType: 'webApp'
