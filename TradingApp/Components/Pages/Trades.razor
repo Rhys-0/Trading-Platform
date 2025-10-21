@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using TradingApp.Models
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
 @inject TradingApp.Data.Interfaces.ITradeManager TradeManager
 @inject TradingApp.Data.Interfaces.IAuthenticationService AuthService
 @inject IJSRuntime JS
@@ -22,7 +23,7 @@
   else
   {
       <div class="filters">
-        <input class="form-control" placeholder="Symbol (e.g., TSLA)" @bind="_symbolFilter" @oninput="(_)=>ApplyFiltersAndSort()" />
+        <input class="form-control" placeholder="Stock (e.g., TSLA)" @bind="_symbolFilter" @onkeydown="OnSearchKeyDown" />
         <select class="form-select" @bind="_typeFilter" @bind:after="ApplyFiltersAndSort">
             <option value="">All</option>
             <option>Buy</option>
@@ -30,6 +31,7 @@
         </select>
         <InputDate @bind-Value="_fromDate" @bind-Value:after="ApplyFiltersAndSort" class="form-control" />
         <InputDate @bind-Value="_toDate" @bind-Value:after="ApplyFiltersAndSort" class="form-control" />
+        <button class="btn btn-primary" @onclick="ApplyFiltersAndSort">Search</button>
         <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
         <div class="spacer"></div>
         <button class="btn btn-outline-primary" @onclick="ExportCsv">Export CSV</button>
@@ -105,6 +107,12 @@ th[role="button"] { user-select:none; cursor:pointer; }
     private const int PageSize = 12;
     private IEnumerable<Trade> Paged => _filtered.Skip((_page-1)*PageSize).Take(PageSize);
     private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)_filtered.Count() / PageSize));
+
+    private void OnSearchKeyDown(KeyboardEventArgs e) {
+        if (e.Key == "Enter") {
+            ApplyFiltersAndSort();
+        }
+    }
 
     protected override async Task OnInitializedAsync() {
         var user = AuthService.CurrentUser;
