@@ -1,0 +1,115 @@
+﻿@page "/portfolio"
+@rendermode InteractiveServer
+
+@using TradingApp.Data.Interfaces
+@inject IAuthenticationService AuthService
+@inject TradingApp.Services.PortfolioService PortfolioService
+@inject TradingApp.Models.Stocks Stocks
+@inject NavigationManager Nav
+
+<PageTitle>Portfolio</PageTitle>
+
+@if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
+{
+    <div class="not-authenticated">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <h4>Not Authenticated</h4>
+            <p>You need to be logged in to view the dashboard.</p>
+            <a href="/login" class="btn btn-primary">Login</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="mt-4 mb-4">
+            <h1 class="fw-bold text-primary">Welcome back, @AuthService.CurrentUser.FirstName!</h1>
+        </div>
+
+        <div class="row g-4 mt-3">
+            <div class="col-lg-3 col-md-6">
+                <div class="card shadow-sm rounded-3 p-3">
+                    <h2 class="h5 text-muted mb-2">Portfolio Value</h2>
+                    <p class="fs-2 fw-bold text-primary mb-0">@HoldingsManager.TotalValue.ToString("C")</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card shadow-sm rounded-3 p-3">
+                    <h2 class="h5 text-muted mb-2">Change (24hrs)</h2>
+                    <p class="fs-2 fw-bold @(HoldingsManager.FlatChange >= 0 ? "text-success" : "text-danger") mb-0">
+                        @(HoldingsManager.FlatChange >= 0 ? "+" : "")@HoldingsManager.FlatChange.ToString("C")
+                        <span class="fs-6 fw-normal">(@(HoldingsManager.PercentageChange >= 0 ? "+" : "")@HoldingsManager.PercentageChange.ToString("P"))</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-5" />
+
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card shadow-sm rounded-3 p-4">
+                    <h2 class="h4 text-muted mb-4">Holdings Breakdown</h2>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Ticker</th>
+                                    <th>Quantity</th>
+                                    <th>Avg. Price</th>
+                                    <th>Current Price</th>
+                                    <th>Daily Change</th>
+                                    <th>Portfolio Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (HoldingsManager.Holdings.Any())
+                                {
+                                    @foreach (var holding in HoldingsManager.Holdings)
+                                    {
+                                        <tr>
+                                            <td>@holding.Name</td>
+                                            <td>@holding.Ticker</td>
+                                            <td>@holding.Quantity</td>
+                                            <td>@holding.AveragePrice.ToString("C")</td>
+                                            <td>@holding.CurrentPrice.ToString("C")</td>
+                                            <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
+                                                @(holding.DailyChange >= 0 ? "+" : "")@holding.DailyChange.ToString("P")
+                                            </td>
+                                            <td>@((holding.PortfolioWeight * 100).ToString("N2"))%</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="7" class="text-center text-muted">No holdings found.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private HoldingsManager HoldingsManager = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
+            return;
+
+        var user = AuthService.CurrentUser;
+
+        PortfolioService.UpdateUserPortfolio(user);
+
+        HoldingsManager.LoadHoldings(
+            positions: user.Portfolio?.Positions ?? new(),
+            stockList: Stocks.StockList
+        );
+    }
+}

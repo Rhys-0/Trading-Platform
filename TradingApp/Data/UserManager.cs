@@ -123,7 +123,7 @@ namespace TradingApp.Data {
 
             if (tradeType != "BUY" && tradeType != "SELL") {
                 throw new ArgumentException("Invalid trade type. Must be 'BUY' or 'SELL'.");
-            }   
+            }
 
             (var tradeId, var time) = await connection.QueryFirstOrDefaultAsync<(long, DateTime)>(
                 "INSERT INTO trade (user_id, stock_symbol, quantity, price, trade_type) " +
@@ -165,7 +165,7 @@ namespace TradingApp.Data {
                         position.PositionId
                     }, transaction: transaction
                 );
-                
+
                 await connection.ExecuteAsync(
                     "DELETE FROM position " +
                     "WHERE position_id = @PositionId",
@@ -280,6 +280,50 @@ namespace TradingApp.Data {
 
 
             return true;
+        }
+
+        public async Task<List<User>> GetAllUsers()
+        {
+            using var connection = await _connection.CreateConnectionAsync();
+
+            var users = (await connection.QueryAsync<User>(@"
+                SELECT 
+                    user_id AS Id, 
+                    username, 
+                    email, 
+                    first_name AS FirstName, 
+                    last_name AS LastName, 
+                    starting_cash_balance AS StartingCashBalance, 
+                    current_cash_balance AS CurrentCashBalance
+                FROM users
+            ")).ToList();
+
+            return users;
+        }
+        
+        public async Task<User?> GetUserById(long userId)
+        {
+            using var connection = await _connection.CreateConnectionAsync();
+
+            var user = await connection.QueryFirstOrDefaultAsync<User>(
+                @"SELECT 
+                    user_id AS Id, 
+                    username, 
+                    email, 
+                    first_name AS FirstName, 
+                    last_name AS LastName, 
+                    starting_cash_balance AS StartingCashBalance, 
+                    current_cash_balance AS CurrentCashBalance
+                FROM users
+                WHERE user_id = @UserId",
+                new { UserId = userId });
+
+            if (user == null)
+                return null;
+
+            await LoadUserPortfolio(user);
+
+            return user;
         }
     }
 }
