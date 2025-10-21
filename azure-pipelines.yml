@@ -69,5 +69,5 @@ steps:
   inputs:
     azureSubscription: 'Deployment-Connection'
     appType: 'webApp'
-    appName: 'Trading-App'
+    appName: 'UTSTradingApplication2025'
     package: '$(Build.ArtifactStagingDirectory)/**/*.zip'
