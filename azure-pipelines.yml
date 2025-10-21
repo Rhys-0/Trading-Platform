@@ -64,6 +64,15 @@ steps:
     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
     reportDirectory: '$(Agent.TempDirectory)'
 
+- task: DotNetCoreCLI@2
+  displayName: 'Publish Blazor App'
+  inputs:
+    command: 'publish'
+    publishWebProjects: true
+    projects: '$(projectPath)'
+    arguments: '--configuration $(buildConfiguration) --output $(publishDir)'
+    zipAfterPublish: true
+
 - task: AzureWebApp@1
   displayName: 'Deploy Blazor App'
   inputs:
