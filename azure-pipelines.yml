@@ -64,10 +64,10 @@ steps:
     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
     reportDirectory: '$(Agent.TempDirectory)'
 
-- task: PowerShell@2
-  displayName: 'Print OIDC token claims'
+- task: AzureWebApp@1
+  displayName: 'Deploy Blazor App via Federated Identity'
   inputs:
-    targetType: 'inline'
-    script: |
-      Write-Host "OIDC Token Claims:"
-      Write-Host $env:AZURE_DEVOPS_EXT_OIDC_TOKEN
+    azureSubscription: 'Deployment-Connection'
+    appType: 'webApp'
+    appName: 'Trading-App'
+    package: '$(Build.ArtifactStagingDirectory)/**/*.zip'
