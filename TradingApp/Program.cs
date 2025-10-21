@@ -22,6 +22,7 @@ builder.Services.AddScoped<ILoginManager, LoginManager>();
 builder.Services.AddSingleton<UserManager>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<PortfolioService>();
+builder.Services.AddScoped<ITradeManager, TradeManager>();
 
 // Register HttpClient for Stock News API calls
 builder.Services.AddHttpClient<NewsService>(client =>
