@@ -4,9 +4,10 @@ trigger:
 - database-dev
 - stock-news
 - order-page
-- userdashboard
 - stockpage
+- userdashboard
 - shilpi-dev
+- background-processes-dev
 
 pool:
   vmImage: ubuntu-latest

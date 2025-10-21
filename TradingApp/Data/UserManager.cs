@@ -325,5 +325,19 @@ namespace TradingApp.Data {
 
             return user;
         }
+
+        public async Task UpdatePortfolio(Portfolio portfolio) {
+            using var connection = await _connection.CreateConnectionAsync();
+
+            await connection.ExecuteAsync(
+                @"UPDATE Portfolio
+                  SET 
+                    value = @Value,
+                    net_profit = @NetProfit,
+                    percentage_return = @PercentageReturn
+                  WHERE portfolio_id = @PortfolioId",
+                new { portfolio.Value, portfolio.NetProfit, portfolio.PercentageReturn, portfolio.PortfolioId }
+            );
+        }
     }
 }

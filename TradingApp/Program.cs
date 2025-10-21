@@ -19,9 +19,9 @@ builder.Services.AddSingleton<Stocks>();
 
 // Scoped classes
 builder.Services.AddScoped<ILoginManager, LoginManager>();
-builder.Services.AddScoped<UserManager>();
+builder.Services.AddSingleton<UserManager>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<PortfolioService>();
+builder.Services.AddSingleton<PortfolioService>();
 
 // Register HttpClient for Stock News API calls
 builder.Services.AddHttpClient<NewsService>(client =>
@@ -32,6 +32,7 @@ builder.Services.AddScoped<NewsService>();
 
 // Background Services
 builder.Services.AddHostedService<StockPriceService>();
+builder.Services.AddHostedService<PortfolioUpdateService>();
 
 // Authentication service
 builder.Services.AddScoped<TradingApp.Data.Interfaces.IAuthenticationService, TradingApp.Data.AuthenticationService>();
