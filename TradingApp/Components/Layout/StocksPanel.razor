@@ -1,6 +1,8 @@
 ﻿@namespace TradingApp.Components
 @using TradingApp.Models
 @inject Stocks StockModel
+@inject TradingApp.Data.Interfaces.ITradeManager TradeManager
+@inject TradingApp.Data.Interfaces.IAuthenticationService AuthService
 @implements IDisposable
 
 <div class="stocks-grid">
@@ -177,8 +179,22 @@
         }
     }
 
-    private void HandleTradeExecuted(TradingModal.TradeConfirmation trade) {
+    private async Task HandleTradeExecuted(TradingModal.TradeConfirmation trade) {
         _notification.ShowTradeConfirmation(trade);
         // TODO: execute trade via service if desired
+
+        // Trade (Transaction History) Part
+        var user = AuthService.CurrentUser;
+        if (user is null) return;
+
+        var toSave = new TradingApp.Models.Trade {
+            UserId = (long)user.Id,
+            TradeType = trade.TradeType.ToString(),
+            StockSymbol = trade.Stock.Symbol,
+            Quantity = (int)Math.Round(trade.Shares),
+            Price = trade.PricePerShare,
+            Time = trade.Timestamp
+        };
+        await TradeManager.AddTradeAsync(toSave);
     }
-}
+} 
