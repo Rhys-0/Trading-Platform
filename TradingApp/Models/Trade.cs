@@ -1,6 +1,7 @@
 ﻿namespace TradingApp.Models {
     public class Trade {
         public long TradeId { get; set; }
+        public long UserId { get; set; }
         public string TradeType { get; set; } = "";
         public string StockSymbol { get; set; } = "";
         public int Quantity { get; set; }
