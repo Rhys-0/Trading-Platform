@@ -63,3 +63,11 @@ steps:
     codeCoverageTool: 'OpenCover'
     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
     reportDirectory: '$(Agent.TempDirectory)'
+
+- task: PowerShell@2
+  displayName: 'Print OIDC token claims'
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host "OIDC Token Claims:"
+      Write-Host $env:AZURE_DEVOPS_EXT_OIDC_TOKEN
