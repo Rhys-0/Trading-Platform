@@ -81,15 +81,13 @@
 
     private readonly Dictionary<string, QuoteDto> Quotes = new();
 
-    private readonly string[] Symbols = {
-        "NASDAQ:TSLA","NASDAQ:AAPL","NASDAQ:MSFT","NASDAQ:NVDA",
-        "NASDAQ:AMZN","NYSE:SPY","NYSE:KO","NYSE:DIS"
-    };
+    private IEnumerable<string> AllSymbols =>
+    StockModel.StockList.Keys.Select(MapToDisplayKey).Distinct();
 
     private IEnumerable<string> FilteredSymbols =>
         string.IsNullOrWhiteSpace(search)
-            ? Symbols
-            : Symbols.Where(s => s.Contains(search, StringComparison.OrdinalIgnoreCase));
+            ? AllSymbols
+            : AllSymbols.Where(s => s.Contains(search, StringComparison.OrdinalIgnoreCase));
 
     private IEnumerable<string> VisibleSymbols =>
         FilteredSymbols.Where(sym => Quotes.TryGetValue(sym, out var q) && q.Price > 0);
@@ -110,10 +108,12 @@
     }
 
     private static string MapToDisplayKey(string bareSymbol) => bareSymbol switch {
-        "SPY" => "NYSE:SPY",
-        "KO"  => "NYSE:KO",
-        "DIS" => "NYSE:DIS",
-        _     => $"NASDAQ:{bareSymbol}"
+        // ETFs / NYSE names
+        "SPY" or "KO" or "DIS" or "JPM" or "BAC" or "WMT" or "COST" or "PEP" or "NKE" or "IBM" or "ORCL" or "TSM"
+            => $"NYSE:{bareSymbol}",
+
+        // everything else default to NASDAQ
+        _ => $"NASDAQ:{bareSymbol}"
     };
 
     private void OnPriceUpdatedFromServer(string bareSymbol, decimal newPrice) {
