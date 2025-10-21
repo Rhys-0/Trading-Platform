@@ -1,0 +1,188 @@
+﻿@page "/trades"
+@rendermode InteractiveServer
+@using TradingApp.Models
+@inject TradingApp.Data.Interfaces.ITradeManager TradeManager
+@inject TradingApp.Data.Interfaces.IAuthenticationService AuthService
+@inject IJSRuntime JS
+
+<PageTitle>Trade History</PageTitle>
+
+<div class="history-container">
+  <h2><i class="bi bi-arrow-left-right"></i> Trade History</h2>
+
+  @if (!_loaded)
+  {
+      <p>Loading…</p>
+  }
+  else if (!_hasData)
+  {
+      <div class="alert alert-info">No trades yet.</div>
+  }
+  else
+  {
+      <div class="filters">
+        <input class="form-control" placeholder="Symbol (e.g., TSLA)" @bind="_symbolFilter" @oninput="(_)=>ApplyFiltersAndSort()" />
+        <select class="form-select" @bind="_typeFilter" @onchange="(_)=>ApplyFiltersAndSort()">
+            <option value="">All</option>
+            <option>Buy</option>
+            <option>Sell</option>
+        </select>
+        <input class="form-control" type="date" @bind="_fromDate" @onchange="(_)=>ApplyFiltersAndSort()" />
+        <input class="form-control" type="date" @bind="_toDate" @onchange="(_)=>ApplyFiltersAndSort()" />
+        <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
+        <div class="spacer"></div>
+        <button class="btn btn-outline-primary" @onclick="ExportCsv">Export CSV</button>
+        <button class="btn btn-outline-dark" @onclick="ExportJson">Export JSON</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th @onclick="@(()=>SortBy(nameof(Trade.Time)))" role="button">Time @SortGlyph(nameof(Trade.Time))</th>
+              <th @onclick="@(()=>SortBy(nameof(Trade.StockSymbol)))" role="button">Symbol @SortGlyph(nameof(Trade.StockSymbol))</th>
+              <th @onclick="@(()=>SortBy(nameof(Trade.TradeType)))" role="button">Type @SortGlyph(nameof(Trade.TradeType))</th>
+              <th @onclick="@(()=>SortBy(nameof(Trade.Quantity)))" role="button">Qty @SortGlyph(nameof(Trade.Quantity))</th>
+              <th @onclick="@(()=>SortBy(nameof(Trade.Price)))" role="button">Price @SortGlyph(nameof(Trade.Price))</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var t in Paged)
+            {
+                <tr>
+                  <td>@t.Time.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                  <td>@t.StockSymbol</td>
+                  <td>
+                    <span class="badge @(t.TradeType == "Buy" ? "bg-success" : "bg-danger")">@t.TradeType</span>
+                  </td>
+                  <td>@t.Quantity</td>
+                  <td>$@t.Price.ToString("N2")</td>
+                  <td>$@( (t.Price * t.Quantity).ToString("N2") )</td>
+                </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pager">
+        <button class="btn btn-sm btn-outline-secondary" disabled="@(_page == 1)" @onclick="Prev">Prev</button>
+        <span>Page @_page / @TotalPages</span>
+        <button class="btn btn-sm btn-outline-secondary" disabled="@(_page == TotalPages)" @onclick="Next">Next</button>
+      </div>
+  }
+</div>
+
+<style>
+.history-container { padding: 2rem; }
+.filters { display:flex; gap:.5rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap; }
+.filters .spacer { flex:1; }
+.table-wrap { overflow-x:auto; }
+.pager { display:flex; gap:.75rem; align-items:center; margin-top:.5rem; }
+th[role="button"] { user-select:none; cursor:pointer; }
+</style>
+
+@code {
+    private bool _loaded;
+    private bool _hasData;
+
+    private List<Trade> _all = new();
+    private IEnumerable<Trade> _filtered = Enumerable.Empty<Trade>();
+
+    // filters
+    private string _symbolFilter = "";
+    private string _typeFilter = "";
+    private string? _fromDate;
+    private string? _toDate;
+
+    // sort
+    private string _sortBy = nameof(Trade.Time);
+    private bool _sortAsc = false;
+
+    // paging
+    private int _page = 1;
+    private const int PageSize = 12;
+    private IEnumerable<Trade> Paged => _filtered.Skip((_page-1)*PageSize).Take(PageSize);
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)_filtered.Count() / PageSize));
+
+    protected override async Task OnInitializedAsync() {
+        _all = (await TradeManager.GetAllTradesAsync()).ToList();
+
+        _hasData = _all.Any();
+        ApplyFiltersAndSort();
+        _loaded = true;
+    }
+
+    private void ApplyFiltersAndSort() {
+        IEnumerable<Trade> q = _all;
+
+        if (!string.IsNullOrWhiteSpace(_symbolFilter))
+            q = q.Where(t => t.StockSymbol.Contains(_symbolFilter, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrEmpty(_typeFilter))
+            q = q.Where(t => string.Equals(t.TradeType, _typeFilter, StringComparison.OrdinalIgnoreCase));
+
+        if (DateTime.TryParse(_fromDate, out var from))
+            q = q.Where(t => t.Time >= from);
+
+        if (DateTime.TryParse(_toDate, out var to))
+            q = q.Where(t => t.Time <= to.AddDays(1).AddTicks(-1)); // inclusive
+
+        q = (_sortBy, _sortAsc) switch {
+            (nameof(Trade.StockSymbol), true) => q.OrderBy(t => t.StockSymbol),
+            (nameof(Trade.StockSymbol), false)=> q.OrderByDescending(t => t.StockSymbol),
+            (nameof(Trade.TradeType), true)   => q.OrderBy(t => t.TradeType),
+            (nameof(Trade.TradeType), false)  => q.OrderByDescending(t => t.TradeType),
+            (nameof(Trade.Quantity), true)    => q.OrderBy(t => t.Quantity),
+            (nameof(Trade.Quantity), false)   => q.OrderByDescending(t => t.Quantity),
+            (nameof(Trade.Price), true)       => q.OrderBy(t => t.Price),
+            (nameof(Trade.Price), false)      => q.OrderByDescending(t => t.Price),
+            (nameof(Trade.Time), true)        => q.OrderBy(t => t.Time),
+            _                                 => q.OrderByDescending(t => t.Time),
+        };
+
+        _filtered = q.ToList();
+        _page = 1;
+        StateHasChanged();
+    }
+
+    private void ClearFilters() {
+        _symbolFilter = ""; _typeFilter = ""; _fromDate = null; _toDate = null;
+        ApplyFiltersAndSort();
+    }
+
+    private void SortBy(string col) {
+        if (_sortBy == col) _sortAsc = !_sortAsc;
+        else { _sortBy = col; _sortAsc = true; }
+        ApplyFiltersAndSort();
+    }
+
+    private MarkupString SortGlyph(string col) {
+        if (_sortBy != col) return (MarkupString)string.Empty;
+        return (MarkupString)(_sortAsc ? " ▲" : " ▼");
+    }
+
+    private void Prev() { if (_page > 1) _page--; }
+    private void Next() { if (_page < TotalPages) _page++; }
+
+    private async Task ExportCsv() {
+        var rows = new List<string> { "TradeId,Time,Symbol,Type,Quantity,Price,Total" };
+        foreach (var t in _filtered) {
+            rows.Add(string.Join(",",
+                t.TradeId,
+                t.Time.ToString("yyyy-MM-dd HH:mm:ss"),
+                t.StockSymbol,
+                t.TradeType,
+                t.Quantity,
+                t.Price.ToString("0.00"),
+                (t.Price * t.Quantity).ToString("0.00")));
+        }
+        var csv = string.Join("\n", rows);
+        await JS.InvokeVoidAsync("downloads.saveTextFile", $"trades_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv", csv);
+    }
+
+    private async Task ExportJson() {
+        var json = System.Text.Json.JsonSerializer.Serialize(_filtered, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        await JS.InvokeVoidAsync("downloads.saveTextFile", $"trades_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json", json);
+    }
+}
