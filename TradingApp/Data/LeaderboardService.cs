@@ -1,5 +1,6 @@
 using Npgsql;
 using Dapper;
+using System.Data;
 using TradingApp.Data.Interfaces;
 using TradingApp.Models;
 using TradingApp.Models.Interfaces;
@@ -8,10 +9,12 @@ namespace TradingApp.Data {
     public class LeaderboardService : ILeaderboardService {
         private readonly DatabaseConnection _connection;
         private readonly ILogger<LeaderboardService> _logger;
+        private readonly Stocks _stocks;
 
-        public LeaderboardService(DatabaseConnection connection, ILogger<LeaderboardService> logger) {
+        internal LeaderboardService(DatabaseConnection connection, ILogger<LeaderboardService> logger, Stocks stocks) {
             _connection = connection;
             _logger = logger;
+            _stocks = stocks;
         }
 
         public async Task<List<LeaderboardEntry>> GetLeaderboardAsync() {
@@ -19,55 +22,95 @@ namespace TradingApp.Data {
                 // Try to get data from database first
                 using var connection = await _connection.CreateConnectionAsync();
                 
-                // Query to get all users with their current balances and calculate profit/loss
-                var query = @"
+                // Get all users with their basic info
+                var usersQuery = @"
                     SELECT 
                         u.user_id,
                         u.username,
                         u.first_name,
                         u.last_name,
                         u.starting_cash_balance,
-                        u.current_cash_balance,
-                        u.current_cash_balance as total_value,
-                        (u.current_cash_balance - u.starting_cash_balance) as net_profit,
-                        CASE 
-                            WHEN u.starting_cash_balance > 0 
-                            THEN ((u.current_cash_balance - u.starting_cash_balance) / u.starting_cash_balance) * 100
-                            ELSE 0 
-                        END as percentage_return,
-                        NOW() as last_updated
-                    FROM users u
-                    ORDER BY percentage_return DESC";
+                        u.current_cash_balance
+                    FROM users u";
 
-                var entries = await connection.QueryAsync<LeaderboardEntry>(query);
-                var leaderboard = entries.ToList();
+                var users = await connection.QueryAsync<dynamic>(usersQuery);
+                var leaderboard = new List<LeaderboardEntry>();
 
-                // Add rank numbers
+                foreach (var user in users) {
+                    // Calculate total portfolio value including stock positions
+                    decimal totalValue = await CalculateTotalPortfolioValue(connection, user.user_id, user.current_cash_balance);
+                    decimal netProfit = totalValue - user.starting_cash_balance;
+                    decimal percentageReturn = user.starting_cash_balance > 0 
+                        ? (netProfit / user.starting_cash_balance) * 100 
+                        : 0;
+
+                    leaderboard.Add(new LeaderboardEntry {
+                        UserId = user.user_id,
+                        Username = user.username,
+                        FirstName = user.first_name,
+                        LastName = user.last_name,
+                        StartingBalance = user.starting_cash_balance,
+                        CurrentBalance = totalValue,
+                        NetProfit = netProfit,
+                        PercentageReturn = percentageReturn,
+                        LastUpdated = DateTime.Now
+                    });
+                }
+
+                // Sort by percentage return and add ranks
+                leaderboard = leaderboard.OrderByDescending(entry => entry.PercentageReturn).ToList();
                 for (int i = 0; i < leaderboard.Count; i++) {
                     leaderboard[i].Rank = i + 1;
                 }
 
                 return leaderboard;
             } catch (Exception ex) {
-                _logger.LogError(ex, "Database connection failed, returning mock data");
-                
-                // Return mock data when database is not available
-                return GetMockLeaderboardData();
+                _logger.LogError(ex, "Error retrieving leaderboard from database");
+                return new List<LeaderboardEntry>();
             }
         }
 
-        private List<LeaderboardEntry> GetMockLeaderboardData() {
-            return new List<LeaderboardEntry> {
-                new() { UserId = 1, Username = "crypto_king", FirstName = "Alex", LastName = "Davis", StartingBalance = 10000m, CurrentBalance = 15200m, NetProfit = 5200m, PercentageReturn = 52.00m, Rank = 1, LastUpdated = DateTime.Now },
-                new() { UserId = 2, Username = "bull_market", FirstName = "Tom", LastName = "Miller", StartingBalance = 10000m, CurrentBalance = 13400m, NetProfit = 3400m, PercentageReturn = 34.00m, Rank = 2, LastUpdated = DateTime.Now },
-                new() { UserId = 3, Username = "trader_jane", FirstName = "Jane", LastName = "Smith", StartingBalance = 10000m, CurrentBalance = 12500m, NetProfit = 2500m, PercentageReturn = 25.00m, Rank = 3, LastUpdated = DateTime.Now },
-                new() { UserId = 4, Username = "investor_pro", FirstName = "David", LastName = "Brown", StartingBalance = 10000m, CurrentBalance = 11800m, NetProfit = 1800m, PercentageReturn = 18.00m, Rank = 4, LastUpdated = DateTime.Now },
-                new() { UserId = 5, Username = "day_trader", FirstName = "Sarah", LastName = "Wilson", StartingBalance = 10000m, CurrentBalance = 9200m, NetProfit = -800m, PercentageReturn = -8.00m, Rank = 5, LastUpdated = DateTime.Now },
-                new() { UserId = 6, Username = "bear_defender", FirstName = "Emma", LastName = "Taylor", StartingBalance = 10000m, CurrentBalance = 8900m, NetProfit = -1100m, PercentageReturn = -11.00m, Rank = 6, LastUpdated = DateTime.Now },
-                new() { UserId = 7, Username = "stock_guru", FirstName = "Mike", LastName = "Johnson", StartingBalance = 10000m, CurrentBalance = 8750m, NetProfit = -1250m, PercentageReturn = -12.50m, Rank = 7, LastUpdated = DateTime.Now },
-                new() { UserId = 8, Username = "market_master", FirstName = "Lisa", LastName = "Garcia", StartingBalance = 10000m, CurrentBalance = 7600m, NetProfit = -2400m, PercentageReturn = -24.00m, Rank = 8, LastUpdated = DateTime.Now }
-            };
+        private async Task<decimal> CalculateTotalPortfolioValue(IDbConnection connection, long userId, decimal cashBalance) {
+            try {
+                // Get all positions for this user
+                var positionsQuery = @"
+                    SELECT 
+                        p.stock_symbol,
+                        p.total_quantity
+                    FROM position p
+                    INNER JOIN portfolio pf ON p.portfolio_id = pf.portfolio_id
+                    WHERE pf.user_id = @UserId";
+
+                var positions = await connection.QueryAsync<dynamic>(positionsQuery, new { UserId = userId });
+                
+                decimal totalStockValue = 0;
+                
+                foreach (var position in positions) {
+                    string stockSymbol = position.stock_symbol;
+                    int quantity = position.total_quantity;
+                    
+                    // Get current price from Stocks service
+                    if (_stocks.StockList.TryGetValue(stockSymbol, out var stock)) {
+                        decimal currentPrice = stock.Price;
+                        decimal positionValue = quantity * currentPrice;
+                        totalStockValue += positionValue;
+                        
+                        _logger.LogDebug("Position: {Symbol} x {Quantity} @ ${Price} = ${Value}", 
+                            stockSymbol, quantity, currentPrice, positionValue);
+                    }
+                }
+                
+                decimal totalPortfolioValue = cashBalance + totalStockValue;
+                _logger.LogDebug("User {UserId}: Cash ${Cash} + Stocks ${Stocks} = Total ${Total}", 
+                    userId, cashBalance, totalStockValue, totalPortfolioValue);
+                
+                return totalPortfolioValue;
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Error calculating portfolio value for user {UserId}", userId);
+                return cashBalance; // Return just cash balance if calculation fails
+            }
         }
+
 
         public async Task<List<LeaderboardEntry>> GetLeaderboardSortedByGainsAsync() {
             try {
