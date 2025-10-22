@@ -15,6 +15,11 @@ namespace TradingApp.Data
         private readonly HttpClient _http;
         private readonly string _apiKey;
         private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+        
+        // Cache
+        private static List<NewsArticle>? _cachedArticles;
+        private static DateTime _cacheExpiry = DateTime.MinValue;
+        private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
 
         public NewsService(HttpClient http, IConfiguration config)
         {
@@ -25,20 +30,37 @@ namespace TradingApp.Data
 
         public async Task<List<NewsArticle>> GetMarketNewsAsync()
         {
+            // Return cached data if still valid
+            if (_cachedArticles != null && DateTime.UtcNow < _cacheExpiry)
+            {
+                Console.WriteLine($"[NewsService] Returning {_cachedArticles.Count} cached articles");
+                return _cachedArticles;
+            }
+
             try
             {
                 var relativeUrl = $"query?function=NEWS_SENTIMENT&topics=technology,earnings&apikey={_apiKey}";
                 var requestUri = new Uri(relativeUrl, UriKind.Relative);
+                
+                Console.WriteLine($"[NewsService] Making API request...");
+                
                 var response = await _http.GetAsync(requestUri);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"API request failed with status code: {response.StatusCode}");
-                    return new List<NewsArticle>();
+                    Console.WriteLine($"[NewsService] API failed: {response.StatusCode}");
+                    return _cachedArticles ?? new List<NewsArticle>();
                 }
 
                 var jsonString = await response.Content.ReadAsStringAsync();
                 
+                // Check for rate limit message
+                if (jsonString.Contains("\"Information\"") || jsonString.Contains("rate limit"))
+                {
+                    Console.WriteLine($"[NewsService] Rate limit hit. Response: {jsonString[..Math.Min(200, jsonString.Length)]}");
+                    return _cachedArticles ?? new List<NewsArticle>();
+                }
+
                 // Guard against non-JSON payloads (rate limits often return HTML/text)
                 var span = jsonString.AsSpan().TrimStart();
                 if (span.Length == 0 || (span[0] != '{' && span[0] != '['))
@@ -60,8 +82,8 @@ namespace TradingApp.Data
                 }
 
                 var newsItems = apiResponse?.Feed ?? new List<NewsItem>();
-
-                return newsItems.Select(item => new NewsArticle
+                
+                var articles = newsItems.Select(item => new NewsArticle
                 {
                     Title = item.Title ?? "No Title",
                     Description = item.Summary ?? item.Description ?? "",
@@ -70,21 +92,19 @@ namespace TradingApp.Data
                     PublishedAt = ParseAlphaVantageDateTime(item.TimePublished ?? item.PublishedAtAlternative),
                     ImageUrl = item.BannerImage
                 }).ToList();
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"HTTP request error: {ex.Message}");
-                return new List<NewsArticle>();
-            }
-            catch (TaskCanceledException ex)
-            {
-                Console.WriteLine($"Request timed out: {ex.Message}");
-                return new List<NewsArticle>();
+
+                // Cache the results
+                _cachedArticles = articles;
+                _cacheExpiry = DateTime.UtcNow.Add(CacheDuration);
+                
+                Console.WriteLine($"[NewsService] Cached {articles.Count} articles until {_cacheExpiry:HH:mm:ss}");
+                
+                return articles;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error in NewsService: {ex.Message}");
-                return new List<NewsArticle>();
+                Console.WriteLine($"[NewsService] Error: {ex.Message}");
+                return _cachedArticles ?? new List<NewsArticle>();
             }
         }
 
@@ -123,7 +143,6 @@ namespace TradingApp.Data
     {
         public List<NewsItem>? Feed { get; set; }
         
-        // Alpha Vantage returns this as a string (e.g., "50"), not a number or array
         [JsonPropertyName("items")]
         public string? Items { get; set; }
     }
