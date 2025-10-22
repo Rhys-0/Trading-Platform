@@ -57,7 +57,9 @@
                   <td>@t.Time.ToString("yyyy-MM-dd HH:mm:ss")</td>
                   <td>@t.StockSymbol</td>
                   <td>
-                    <span class="badge @(t.TradeType == "Buy" ? "bg-success" : "bg-danger")">@t.TradeType</span>
+                    <span class="badge @(t.TradeType.Equals("Buy", StringComparison.OrdinalIgnoreCase) ? "bg-success" : "bg-danger")">
+                      @t.TradeType
+                    </span>
                   </td>
                   <td>@t.Quantity</td>
                   <td>$@t.Price.ToString("N2")</td>
