@@ -8,6 +8,7 @@ trigger:
 - userdashboard
 - shilpi-dev
 - background-processes-dev
+- leo-branch
 
 pool:
   vmImage: ubuntu-latest
