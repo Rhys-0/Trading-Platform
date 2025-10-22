@@ -9,14 +9,20 @@ namespace TradingApp.Tests.Models
 {
     public class HoldingsManagerTests
     {
-        private static PurchaseLot CreatePurchaseLot(long id, int qty, decimal price, DateTime date)
+        private static PurchaseLot CreatePurchaseLot(long id, decimal qty, decimal price, DateTime date)
         {
             var ctor = typeof(PurchaseLot)
                 .GetConstructor(
                     BindingFlags.Instance | BindingFlags.NonPublic,
                     null,
-                    new[] { typeof(long), typeof(int), typeof(decimal), typeof(DateTime) },
-                    null)!;
+                    new[] { typeof(long), typeof(decimal), typeof(decimal), typeof(DateTime) },
+                    null
+                );
+
+            if (ctor == null)
+                throw new InvalidOperationException(
+                    "Could not find non-public constructor for PurchaseLot(long, decimal, decimal, DateTime)."
+                );
 
             return (PurchaseLot)ctor.Invoke(new object[] { id, qty, price, date });
         }
@@ -41,14 +47,14 @@ namespace TradingApp.Tests.Models
             var posAapl = CreatePosition(1, "AAPL", 10);
             posAapl.PurchaseLots = new List<PurchaseLot>
             {
-                CreatePurchaseLot(1, 5, 100m, DateTime.UtcNow.AddDays(-5)),
-                CreatePurchaseLot(2, 5, 120m, DateTime.UtcNow.AddDays(-2))
+                CreatePurchaseLot(1, 5m, 100m, DateTime.UtcNow.AddDays(-5)),
+                CreatePurchaseLot(2, 5m, 120m, DateTime.UtcNow.AddDays(-2))
             };
 
             var posMsft = CreatePosition(2, "MSFT", 5);
             posMsft.PurchaseLots = new List<PurchaseLot>
             {
-                CreatePurchaseLot(3, 5, 200m, DateTime.UtcNow.AddDays(-1))
+                CreatePurchaseLot(3, 5m, 200m, DateTime.UtcNow.AddDays(-1))
             };
 
             var positions = new Dictionary<string, Position>
@@ -81,7 +87,7 @@ namespace TradingApp.Tests.Models
             var fakePos = CreatePosition(3, "FAKE", 10);
             fakePos.PurchaseLots = new List<PurchaseLot>
             {
-                CreatePurchaseLot(4, 10, 50m, DateTime.UtcNow)
+                CreatePurchaseLot(4, 10m, 50m, DateTime.UtcNow)
             };
 
             var positions = new Dictionary<string, Position>
