@@ -1,11 +1,14 @@
 ﻿@page "/portfolio"
+@page "/portfolio/{userId:long}"
 @rendermode InteractiveServer
 
+@using System.Collections.Concurrent
 @using TradingApp.Data.Interfaces
 @inject IAuthenticationService AuthService
 @inject TradingApp.Services.PortfolioService PortfolioService
 @inject TradingApp.Models.Stocks Stocks
 @inject NavigationManager Nav
+@inject TradingApp.Data.UserManager UserManager
 
 <PageTitle>Portfolio</PageTitle>
 
@@ -24,7 +27,7 @@ else
 {
     <div class="container-fluid">
         <div class="mt-4 mb-4">
-            <h1 class="fw-bold text-primary">Welcome back, @AuthService.CurrentUser.FirstName!</h1>
+            <h1 class="fw-bold text-primary">@TargetUser?.FirstName's Portfolio</h1>
         </div>
 
         <div class="row g-4 mt-3">
@@ -36,7 +39,7 @@ else
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="card shadow-sm rounded-3 p-3">
-                    <h2 class="h5 text-muted mb-2">Change (24hrs)</h2>
+                    <h2 class="h5 text-muted mb-2">% Change Since Purchase</h2>
                     <p class="fs-2 fw-bold @(HoldingsManager.FlatChange >= 0 ? "text-success" : "text-danger") mb-0">
                         @(HoldingsManager.FlatChange >= 0 ? "+" : "")@HoldingsManager.FlatChange.ToString("C")
                         <span class="fs-6 fw-normal">(@(HoldingsManager.PercentageChange >= 0 ? "+" : "")@HoldingsManager.PercentageChange.ToString("P"))</span>
@@ -58,6 +61,7 @@ else
                                     <th>Name</th>
                                     <th>Ticker</th>
                                     <th>Quantity</th>
+                                    <th>Total Value</th>
                                     <th>Avg. Price</th>
                                     <th>Current Price</th>
                                     <th>Daily Change</th>
@@ -73,6 +77,7 @@ else
                                             <td>@holding.Name</td>
                                             <td>@holding.Ticker</td>
                                             <td>@holding.Quantity</td>
+                                            <td>@((holding.Quantity * holding.CurrentPrice).ToString("C"))</td>
                                             <td>@holding.AveragePrice.ToString("C")</td>
                                             <td>@holding.CurrentPrice.ToString("C")</td>
                                             <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
@@ -84,7 +89,11 @@ else
                                 }
                                 else
                                 {
-                                    <tr><td colspan="7" class="text-center text-muted">No holdings found.</td></tr>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            No holdings found.
+                                        </td>
+                                    </tr>
                                 }
                             </tbody>
                         </table>
@@ -97,19 +106,71 @@ else
 
 @code {
     private HoldingsManager HoldingsManager = new();
+    [Parameter] public long? userId { get; set; }
+    private User? TargetUser;
 
     protected override async Task OnInitializedAsync()
     {
-        if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
-            return;
+        if (userId.HasValue)
+        {
+            TargetUser = await UserManager.GetUserById(userId.Value);
+            if (TargetUser == null)
+            {
+                Nav.NavigateTo("/admin");
+                return;
+            }
+        }
+        else
+        {
+            if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
+                return;
 
-        var user = AuthService.CurrentUser;
+            TargetUser = await UserManager.GetUserById(AuthService.CurrentUser.Id);
+        }
 
-        PortfolioService.UpdateUserPortfolio(user);
+        if (TargetUser.Portfolio == null)
+        {
+            var success = await UserManager.LoadUserPortfolio(TargetUser);
+            if (!success) return;
+        }
+
+        PortfolioService.UpdateUserPortfolio(TargetUser);
 
         HoldingsManager.LoadHoldings(
-            positions: user.Portfolio?.Positions ?? new(),
-            stockList: Stocks.StockList
+            positions: TargetUser.Portfolio?.Positions ?? new Dictionary<string, Position>(),
+            stockList: Stocks?.StockList ?? new ConcurrentDictionary<string, Stock>()
         );
+
+        PortfolioService.OnPortfolioChanged += HandlePortfolioChanged;
+    }
+
+    private async void HandlePortfolioChanged()
+    {
+        User? freshUser;
+
+        if (userId.HasValue)
+        {
+            freshUser = await UserManager.GetUserById(userId.Value);
+        }
+        else
+        {
+            freshUser = await UserManager.GetUserById(AuthService.CurrentUser!.Id);
+        }
+
+        if (freshUser == null) return;
+
+        TargetUser = freshUser;
+
+        HoldingsManager.LoadHoldings(
+            positions: TargetUser.Portfolio?.Positions ?? new Dictionary<string, Position>(),
+            stockList: Stocks?.StockList ?? new ConcurrentDictionary<string, Stock>()
+        );
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        PortfolioService.OnPortfolioChanged -= HandlePortfolioChanged;
     }
 }

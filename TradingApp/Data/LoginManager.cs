@@ -19,7 +19,7 @@ namespace TradingApp.Data {
         /// if no user with the given email and password is found, the function returns null.</returns>
         public async Task<User?> RetrieveUser(string email, string hashedPassword) {
             using var connection = await _connection.CreateConnectionAsync();
-            return await connection.QueryFirstOrDefaultAsync<User>(
+            var user = await connection.QueryFirstOrDefaultAsync<User>(
                 "SELECT user_id AS id, " +
                 "username, " +
                 "email, " +
@@ -30,6 +30,13 @@ namespace TradingApp.Data {
                 "FROM users " +
                 "WHERE email = @Email and password_hash = @HashedPassword",
                 new { Email = email, HashedPassword = hashedPassword });
+
+            if (user == null)
+                return null;
+
+            await LoadPortfolioDataAsync(connection, user);
+
+            return user;
         }
 
         /// <summary>
@@ -41,7 +48,7 @@ namespace TradingApp.Data {
         /// if no user with the given username and password is found, the function returns null.</returns>
         public async Task<User?> RetrieveUserByUsername(string username, string hashedPassword) {
             using var connection = await _connection.CreateConnectionAsync();
-            return await connection.QueryFirstOrDefaultAsync<User>(
+            var user = await connection.QueryFirstOrDefaultAsync<User>(
                 "SELECT user_id AS id, " +
                 "username, " +
                 "email, " +
@@ -52,6 +59,13 @@ namespace TradingApp.Data {
                 "FROM users " +
                 "WHERE username = @Username and password_hash = @HashedPassword",
                 new { Username = username, HashedPassword = hashedPassword });
+
+            if (user == null)
+                return null;
+
+            await LoadPortfolioDataAsync(connection, user);
+
+            return user;
         }
 
         /// <summary>
@@ -143,6 +157,53 @@ namespace TradingApp.Data {
             }
         }
 
+        private async Task LoadPortfolioDataAsync(System.Data.IDbConnection connection, User user)
+        {
+                var portfolio = await connection.QueryFirstOrDefaultAsync<Portfolio>(
+                "SELECT portfolio_id AS PortfolioId, " +
+                "value, " +
+                "net_profit AS NetProfit, " +
+                "percentage_return AS PercentageReturn " +
+                "FROM portfolio " +
+                "WHERE user_id = @UserId",
+                new { UserId = user.Id });
+
+            if (portfolio == null)
+            {
+                user.Portfolio = new Portfolio(0, 0, 0, 0)
+                {
+                    Positions = new Dictionary<string, Position>()
+                };
+                return;
+            }
+
+            user.Portfolio = portfolio;
+
+            var positions = await connection.QueryAsync<Position>(
+                "SELECT position_id AS PositionId, " +
+                "stock_symbol AS StockSymbol, " +
+                "total_quantity AS TotalQuantity " +
+                "FROM position " +
+                "WHERE portfolio_id = @PortfolioId",
+                new { PortfolioId = portfolio.PortfolioId });
+
+            portfolio.Positions = positions.ToDictionary(p => p.StockSymbol, p => p);
+
+            foreach (var position in portfolio.Positions.Values)
+            {
+                var lots = await connection.QueryAsync<PurchaseLot>(
+                    "SELECT purchase_lot_id AS PurchaseLotId, " +
+                    "position_id AS PositionId, " +
+                    "quantity, " +
+                    "purchase_price AS PurchasePrice, " +
+                    "purchase_date AS PurchaseDate " +
+                    "FROM purchase_lot " +
+                    "WHERE position_id = @PositionId",
+                    new { PositionId = position.PositionId });
+
+                position.PurchaseLots = lots.ToList();
+            }
+        }
 
     }
 }

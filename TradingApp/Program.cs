@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Components.Authorization;
 using TradingApp.BackgroundServices;
 using TradingApp.Components;
 using TradingApp.Data;
@@ -14,29 +15,44 @@ builder.Services.AddRazorComponents()
 
 // Singletons
 builder.Services.AddSingleton<DatabaseConnection>();
-builder.Services.AddSingleton<NewsService>();
 builder.Services.AddSingleton<Stocks>();
+builder.Services.AddSingleton<ILoginManager, LoginManager>();  // Changed from Scoped to Singleton
+builder.Services.AddSingleton<UserManager>();
+builder.Services.AddSingleton<PortfolioService>();
+builder.Services.AddScoped<ITradeManager, TradeManager>();
 
 // Scoped classes
-builder.Services.AddScoped<ILoginManager, LoginManager>();
-builder.Services.AddScoped<UserManager>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<PortfolioService>();
 
-// Register HttpClient for Stock News API calls
+// Register HttpClient for Stock News API calls (only this registration)
 builder.Services.AddHttpClient<NewsService>(client =>
 {
     client.BaseAddress = new Uri("https://www.alphavantage.co/");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("TradingApp/1.0");
 });
-builder.Services.AddScoped<NewsService>();
 
 // Background Services
 builder.Services.AddHostedService<StockPriceService>();
+builder.Services.AddHostedService<PortfolioUpdateService>();
 
-// Authentication service
-builder.Services.AddScoped<TradingApp.Data.Interfaces.IAuthenticationService, TradingApp.Data.AuthenticationService>();
+// Authentication service - Register as Singleton so the state persists
+builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 
-// Email and verification services removed - not needed for core functionality
+// Authentication State Provider - MUST be scoped for Blazor
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
+{
+    var customAuthStateProvider = provider.GetRequiredService<CustomAuthenticationStateProvider>();
+    var authService = (AuthenticationService)provider.GetRequiredService<IAuthenticationService>();
+
+    // Connect the two services
+    authService.SetAuthStateProvider(customAuthStateProvider);
+
+    return customAuthStateProvider;
+});
+
+// Add Blazor authorization
+builder.Services.AddCascadingAuthenticationState();
 
 // Leaderboard service
 builder.Services.AddScoped<TradingApp.Models.Interfaces.ILeaderboardService, TradingApp.Data.LeaderboardService>();
@@ -46,36 +62,17 @@ builder.Services.AddScoped<TradingApp.Data.SampleDataService>();
 
 var app = builder.Build();
 
-// Seed sample data on startup - DISABLED to prevent database connection errors
-// using (var scope = app.Services.CreateScope()) {
-//     var sampleDataService = scope.ServiceProvider.GetRequiredService<TradingApp.Data.SampleDataService>();
-//     await sampleDataService.SeedSampleUsersAsync();
-// }
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-
     app.UseHsts();
 }
-
-// Disable HTTPS redirection for clean development startup
-// app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapRazorComponents<TradingApp.Components.App>()
     .AddInteractiveServerRenderMode();
-
-    // Use a different port to avoid conflicts
-    app.Urls.Add("http://localhost:3000");
-
-// Display the application URL in the terminal
-Console.WriteLine("🚀 TradingApp is starting...");
-Console.WriteLine("🌐 Application URL: http://localhost:3000");
-Console.WriteLine("📱 Open your browser and navigate to the URL above");
-Console.WriteLine("");
 
 await app.RunAsync();
