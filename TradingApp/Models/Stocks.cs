@@ -2,7 +2,7 @@
 
 namespace TradingApp.Models
 {
-    internal class Stocks {
+    public class Stocks {
         public ConcurrentDictionary<string, Stock> StockPrices { get; } = new() {
             // NASDAQ mega-cap
             ["AAPL"] = new Stock { Symbol = "AAPL", Name = "Apple Inc.", Price = 0 },
@@ -34,9 +34,9 @@ namespace TradingApp.Models
 
         public ConcurrentDictionary<string, Stock> StockList => StockPrices;
 
-        internal event Action<string, decimal>? PriceUpdated;
+        public event Action<string, decimal>? PriceUpdated;
 
-        internal void SetPrice(string symbol, decimal price) {
+        public void SetPrice(string symbol, decimal price) {
             StockPrices.AddOrUpdate(
                 symbol,
                 s => new Stock(s, s, price),
