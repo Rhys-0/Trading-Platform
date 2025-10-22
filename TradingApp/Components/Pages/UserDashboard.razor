@@ -104,9 +104,12 @@
     }
 
     private List<Holding> Holdings = new();
-    private decimal FlatChange => Holdings.Sum(h => (h.CurrentPrice - h.AveragePrice) * h.Quantity);
-    private decimal TotalValue => Holdings.Sum(h => h.CurrentPrice * h.Quantity);
-    private decimal PercentageChange => TotalValue != 0 ? FlatChange / (TotalValue - FlatChange) : 0;
+    
+    // ✅ Changed from computed properties to fields
+    private decimal FlatChange = 0;
+    private decimal TotalValue = 0;
+    private decimal PercentageChange = 0;
+    
     private TradingApp.Models.User? testUser;
 
     [Parameter]
@@ -170,6 +173,9 @@
             if (!userIdentity.Identity?.IsAuthenticated ?? true)
             {
                 Holdings.Clear();
+                TotalValue = 0;
+                FlatChange = 0;
+                PercentageChange = 0;
                 StateHasChanged();
                 return;
             }
@@ -178,6 +184,9 @@
             if (user?.Portfolio?.Positions == null)
             {
                 Holdings.Clear();
+                TotalValue = 0;
+                FlatChange = 0;
+                PercentageChange = 0;
                 StateHasChanged();
                 return;
             }
@@ -188,12 +197,21 @@
         if (user?.Portfolio?.Positions == null)
         {
             Holdings.Clear();
+            TotalValue = 0;
+            FlatChange = 0;
+            PercentageChange = 0;
             StateHasChanged();
             return;
         }
 
-        // NOTE: This will not display stock names/prices since Stocks is internal
-        // The PortfolioService handles the calculations internally
+        // ✅ USE PORTFOLIO VALUES FROM DATABASE (calculated by PortfolioService)
+        TotalValue = user.Portfolio.Value;
+        FlatChange = user.Portfolio.NetProfit;
+        PercentageChange = user.Portfolio.PercentageReturn;
+
+        Console.WriteLine($"📊 Dashboard loaded - Portfolio Value: ${TotalValue:N2}, Net Profit: ${FlatChange:N2}, Return: {PercentageChange:P2}");
+
+        // Build holdings list
         Holdings = user.Portfolio.Positions.Values.Select(p =>
         {
             decimal avgPrice = p.PurchaseLots?.Any() == true
@@ -206,17 +224,18 @@
                 Name = p.StockSymbol, // Fallback to symbol since Stocks is internal
                 Quantity = p.TotalQuantity,
                 AveragePrice = avgPrice,
-                CurrentPrice = 0, // Cannot access Stocks.StockList
-                DailyChange = 0,
-                PortfolioWeight = 0
+                CurrentPrice = avgPrice, // ✅ Use average price as fallback (actual current price will be shown in TotalValue)
+                DailyChange = 0, // ✅ This would need real-time price data to calculate accurately
+                PortfolioWeight = 0 // Will be calculated below
             };
         })
         .ToList();
 
-        var totalValue = Holdings.Sum(h => h.AveragePrice * h.Quantity);
+        // ✅ Calculate portfolio weight based on average cost (approximation)
+        var totalCost = Holdings.Sum(h => h.AveragePrice * h.Quantity);
         foreach (var h in Holdings)
         {
-            h.PortfolioWeight = totalValue != 0 ? (h.AveragePrice * h.Quantity) / totalValue : 0;
+            h.PortfolioWeight = totalCost != 0 ? (h.AveragePrice * h.Quantity) / totalCost : 0;
         }
 
         StateHasChanged();

@@ -1,16 +1,21 @@
-﻿
-
-namespace TradingApp.Models {
-    public class PurchaseLot {
+﻿namespace TradingApp.Models
+{
+    public class PurchaseLot
+    {
         public long PurchaseLotId { get; set; }
-
-        public int Quantity { get; set; }
-
+        public decimal Quantity { get; set; }
         public decimal PurchasePrice { get; }
-
         public DateTime PurchaseDate { get; }
 
-        internal PurchaseLot(long purchaseLotId, int quantity, decimal purchasePrice, DateTime purchaseDate) {
+        // Parameterless constructor for Dapper
+        public PurchaseLot()
+        {
+            PurchasePrice = 0;
+            PurchaseDate = DateTime.UtcNow;
+        }
+
+        internal PurchaseLot(long purchaseLotId, decimal quantity, decimal purchasePrice, DateTime purchaseDate)
+        {
             PurchaseLotId = purchaseLotId;
             Quantity = quantity;
             PurchasePrice = purchasePrice;

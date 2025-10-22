@@ -1,13 +1,20 @@
-﻿
-
-namespace TradingApp.Models {
-    public class Position {
+﻿namespace TradingApp.Models
+{
+    public class Position
+    {
         public long PositionId { get; set; }
         public string StockSymbol { get; }
         public int TotalQuantity { get; set; }
         public List<PurchaseLot>? PurchaseLots { get; set; }
 
-        internal Position(long positionId, string stockSymbol, int totalQuantity) {
+        // Parameterless constructor for Dapper
+        public Position()
+        {
+            StockSymbol = string.Empty;
+        }
+
+        internal Position(long positionId, string stockSymbol, int totalQuantity)
+        {
             PositionId = positionId;
             StockSymbol = stockSymbol;
             TotalQuantity = totalQuantity;
@@ -20,8 +27,10 @@ namespace TradingApp.Models {
         /// <param name="quantity">The quantity of stocks to sell.</param>
         /// <remarks>This method does not update the database!</remarks>
         /// <exception cref="ArgumentException">Thrown if the quantity is invalid</exception>
-        public void RemoveStocks(int quantity) {
-            if (PurchaseLots == null || PurchaseLots.Count == 0 || quantity <= 0 || quantity > TotalQuantity) {
+        public void RemoveStocks(int quantity)
+        {
+            if (PurchaseLots == null || PurchaseLots.Count == 0 || quantity <= 0 || quantity > TotalQuantity)
+            {
                 throw new ArgumentException("Invalid quantity to sell or no purchase lots available.");
             }
 
@@ -29,13 +38,21 @@ namespace TradingApp.Models {
             List<PurchaseLot> sortedAscending = PurchaseLots.OrderBy(lot => lot.PurchaseDate).ToList();
 
             int remainingToSell = quantity;
-            foreach (PurchaseLot lot in sortedAscending) {
+            foreach (PurchaseLot lot in sortedAscending)
+            {
                 if (remainingToSell <= 0) break;
-                if (lot.Quantity <= remainingToSell) {
+
+                // Cast lot.Quantity to int for comparison
+                int lotQuantityInt = (int)lot.Quantity;
+
+                if (lotQuantityInt <= remainingToSell)
+                {
                     // Sell the entire lot
-                    remainingToSell -= lot.Quantity;
+                    remainingToSell -= lotQuantityInt;
                     lot.Quantity = 0;
-                } else {
+                }
+                else
+                {
                     // Sell part of the lot
                     lot.Quantity -= remainingToSell;
                     remainingToSell = 0;
@@ -47,8 +64,16 @@ namespace TradingApp.Models {
             TotalQuantity -= quantity;
         }
 
-        public void AddStocks(int quantity, decimal pricePerStock) {
-            if (quantity <= 0 || pricePerStock <= 0) {
+        /// <summary>
+        /// Add stocks to the position.
+        /// </summary>
+        /// <param name="quantity">The quantity of shares to add</param>
+        /// <param name="pricePerStock">The price per share</param>
+        /// <exception cref="ArgumentException">Thrown if quantity or price is invalid</exception>
+        public void AddStocks(int quantity, decimal pricePerStock)
+        {
+            if (quantity <= 0 || pricePerStock <= 0)
+            {
                 throw new ArgumentException("Invalid quantity or price per stock.");
             }
             // If purchase lot is null create an empty list
