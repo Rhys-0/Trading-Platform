@@ -18,13 +18,11 @@ namespace TradingApp.Models
             ["AVGO"] = new Stock { Symbol = "AVGO", Name = "Broadcom Inc.", Price = 0 },
 
             // NYSE & ETFs
-            ["SPY"] = new Stock { Symbol = "SPY", Name = "SPDR S&P 500 ETF Trust", Price = 0 },
             ["KO"] = new Stock { Symbol = "KO", Name = "Coca-Cola Company", Price = 0 },
             ["DIS"] = new Stock { Symbol = "DIS", Name = "Walt Disney Company", Price = 0 },
             ["JPM"] = new Stock { Symbol = "JPM", Name = "JPMorgan Chase & Co.", Price = 0 },
             ["BAC"] = new Stock { Symbol = "BAC", Name = "Bank of America Corp", Price = 0 },
             ["WMT"] = new Stock { Symbol = "WMT", Name = "Walmart Inc.", Price = 0 },
-            ["COST"] = new Stock { Symbol = "COST", Name = "Costco Wholesale Corp.", Price = 0 },
             ["PEP"] = new Stock { Symbol = "PEP", Name = "PepsiCo, Inc.", Price = 0 },
             ["NKE"] = new Stock { Symbol = "NKE", Name = "NIKE, Inc.", Price = 0 },
             ["IBM"] = new Stock { Symbol = "IBM", Name = "International Business Machines", Price = 0 },
