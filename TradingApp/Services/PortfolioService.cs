@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System.Collections.Generic;
 using TradingApp.Models;
-
 
 namespace TradingApp.Services
 {
@@ -14,13 +12,11 @@ namespace TradingApp.Services
             _stocks = stocks;
         }
 
-
         /// <summary>
         /// Event triggered when a user's portfolio is updated due to a trade execution.
         /// Subscribe to this event to receive notifications when trades occur.
         /// </summary>
         public event Action? OnPortfolioChanged;
-
 
         /// <summary>
         /// Notifies all subscribers that a portfolio has been updated.
@@ -52,11 +48,16 @@ namespace TradingApp.Services
             decimal value = 0.00m;
             foreach (var position in user.Portfolio.Positions.Values)
             {
-                if (_stocks.StockList.TryGetValue(position.StockSymbol, out var stockInfo)) {
-                    value += position.TotalQuantity * stockInfo.Price;
-                } else {
-                    throw new KeyNotFoundException(
-                        $"Stock symbol '{position.StockSymbol}' not found in current price list.");
+                try
+                {
+                    if (!_stocks.StockList.TryGetValue(position.StockSymbol, out var stock))
+                        continue;
+
+                    value += position.TotalQuantity * stock.Price;
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw new KeyNotFoundException($"Invalid stock symbol '{position.StockSymbol}'. Check that it exists in the Stocks constructor.");
                 }
             }
             user.Portfolio.Value = value;
