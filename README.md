@@ -38,15 +38,15 @@
 
 ### User account creation page, login page and home page
 **Responsible Student:** Shilpi \
-**Model Files:** \
-**View / ViewModel Files:** \
-**Other Files:** 
+**Model Files:** \ User.cs
+**View / ViewModel Files:** \ Home.razor, Login.razor, Register.razor
+**Other Files:** AuthenticationService.cs, UserService.cs, UserManager.cs, LoginManager.cs, PasswordHasher.cs, AuthenticationTests.cs
 
 ### User leaderboard
 **Responsible Student:** Shilpi \
-**Model Files:** \
-**View / ViewModel Files:** \
-**Other Files:** 
+**Model Files:** \ LeaderboardEntry.cs
+**View / ViewModel Files:** \ Leaderboard.razor
+**Other Files:** ILeaderboardService.cs, LeaderboardService.cs, LeaderboardTests.cs
 
 ### Administrator dashboard
 **Responsible Student:** Enoch \

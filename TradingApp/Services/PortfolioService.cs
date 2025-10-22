@@ -2,12 +2,32 @@
 using TradingApp.Models;
 
 
-namespace TradingApp.Services {
-    internal class PortfolioService {
+namespace TradingApp.Services
+{
+    internal class PortfolioService
+    {
         private readonly Stocks _stocks;
 
-        public PortfolioService(Stocks stocks) {
+        public PortfolioService(Stocks stocks)
+        {
             _stocks = stocks;
+        }
+
+
+        /// <summary>
+        /// Event triggered when a user's portfolio is updated due to a trade execution.
+        /// Subscribe to this event to receive notifications when trades occur.
+        /// </summary>
+        public event Action? OnPortfolioChanged;
+
+
+        /// <summary>
+        /// Notifies all subscribers that a portfolio has been updated.
+        /// Call this method after executing a buy or sell trade to trigger UI updates.
+        /// </summary>
+        public void NotifyPortfolioChanged()
+        {
+            OnPortfolioChanged?.Invoke();
         }
 
         /// <summary>
@@ -17,16 +37,26 @@ namespace TradingApp.Services {
         /// <remarks>This method does not update the database!</remarks>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="KeyNotFoundException"></exception>
-        internal void UpdateUserPortfolio(User user) {
-            if(user.Portfolio == null || user.Portfolio.Positions == null) {
+        internal void UpdateUserPortfolio(User user)
+        {
+            if (user is null)
+            {
+                return;
+            }
+            if (user.Portfolio == null || user.Portfolio.Positions == null)
+            {
                 throw new InvalidOperationException("User does not have a portfolio to update, ensure it is loaded first.");
             }
 
             decimal value = 0.00m;
-            foreach (var position in user.Portfolio.Positions.Values) {
-                try {
+            foreach (var position in user.Portfolio.Positions.Values)
+            {
+                try
+                {
                     value += (position.TotalQuantity * _stocks.StockList[position.StockSymbol].Price);
-                } catch (KeyNotFoundException) {
+                }
+                catch (KeyNotFoundException)
+                {
                     throw new KeyNotFoundException("Invalid stock symbol, check if it is correct and it is in the Stocks constructor.");
                 }
             }

@@ -13,7 +13,15 @@ using TradingApp.Data.Interfaces;
 namespace TradingApp.Tests.Services {
     public class UserServiceTests : IClassFixture<MockDatabase> {
         private readonly MockDatabase _db;
-        public UserServiceTests(MockDatabase db) => _db = db;
+        private readonly PortfolioService _portfolioService;
+
+        public UserServiceTests(MockDatabase db) {
+            _db = db;
+            
+            // Create a Stocks instance for PortfolioService
+            var stocks = new Stocks();
+            _portfolioService = new PortfolioService(stocks);
+        }
 
         [Fact]
         public void Constructor_WithValidParams_ShouldInitaliseValues() {
@@ -26,7 +34,7 @@ namespace TradingApp.Tests.Services {
             .Build();
             var userManager = new UserManager(new DatabaseConnection(config));
             // Act
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
             // Assert
             Assert.NotNull(userService);
         }
@@ -48,7 +56,7 @@ namespace TradingApp.Tests.Services {
             var portfolioReturn = await userManager.LoadUserPortfolio(user!);
             var stocks = new Stocks();
             stocks.StockList["AAPL"].Price = 200.00m;
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
 
             // Act
             var returnValue = await userService.ExecuteBuyTrade(user!, "AAPL", 1);
@@ -75,7 +83,7 @@ namespace TradingApp.Tests.Services {
             var portfolioReturn = await userManager.LoadUserPortfolio(user!);
             var stocks = new Stocks();
             stocks.StockList["AAPL"].Price = 200.00m;
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
 
             // Act
             var returnValue = await userService.ExecuteBuyTrade(user!, "AAPL", -5);
@@ -101,7 +109,7 @@ namespace TradingApp.Tests.Services {
             var portfolioReturn = await userManager.LoadUserPortfolio(user!);
             var stocks = new Stocks();
             stocks.StockList["AAPL"].Price = 200.00m;
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => userService.ExecuteBuyTrade(user!, "FAKESTOCK", 1));
@@ -123,7 +131,7 @@ namespace TradingApp.Tests.Services {
             var user = await userManager.GetUser("testuser");
             var stocks = new Stocks();
             stocks.StockList["AAPL"].Price = 200.00m;
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => userService.ExecuteBuyTrade(user!, "AAPL", 1));
@@ -146,7 +154,7 @@ namespace TradingApp.Tests.Services {
             var portfolioReturn = await userManager.LoadUserPortfolio(user!);
             var stocks = new Stocks();
             stocks.StockList["AAPL"].Price = 200.00m;
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => userService.ExecuteSellTrade(user!, "FAKESTOCK", 1));
@@ -168,7 +176,7 @@ namespace TradingApp.Tests.Services {
             var user = await userManager.GetUser("testuser");
             var stocks = new Stocks();
             stocks.StockList["AAPL"].Price = 200.00m;
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => userService.ExecuteSellTrade(user!, "AAPL", 1));
@@ -191,7 +199,7 @@ namespace TradingApp.Tests.Services {
             var portfolioReturn = await userManager.LoadUserPortfolio(user!);
             var stocks = new Stocks();
             stocks.StockList["AAPL"].Price = 200.00m;
-            var userService = new UserService(stocks, userManager);
+            var userService = new UserService(stocks, userManager, _portfolioService);
 
             // Act
             var returnValue = await userService.ExecuteBuyTrade(user!, "AAPL", 1);

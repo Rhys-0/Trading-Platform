@@ -10,11 +10,16 @@ using Microsoft.Extensions.Configuration;
 
 namespace TradingApp.Data
 {
-    internal class NewsService
+    public class NewsService
     {
         private readonly HttpClient _http;
         private readonly string _apiKey;
         private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+        
+        // Cache
+        private static List<NewsArticle>? _cachedArticles;
+        private static DateTime _cacheExpiry = DateTime.MinValue;
+        private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
 
         public NewsService(HttpClient http, IConfiguration config)
         {
@@ -25,24 +30,60 @@ namespace TradingApp.Data
 
         public async Task<List<NewsArticle>> GetMarketNewsAsync()
         {
+            // Return cached data if still valid
+            if (_cachedArticles != null && DateTime.UtcNow < _cacheExpiry)
+            {
+                Console.WriteLine($"[NewsService] Returning {_cachedArticles.Count} cached articles");
+                return _cachedArticles;
+            }
+
             try
             {
                 var relativeUrl = $"query?function=NEWS_SENTIMENT&topics=technology,earnings&apikey={_apiKey}";
                 var requestUri = new Uri(relativeUrl, UriKind.Relative);
+                
+                Console.WriteLine($"[NewsService] Making API request...");
+                
                 var response = await _http.GetAsync(requestUri);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"API request failed with status code: {response.StatusCode}");
-                    return new List<NewsArticle>();
+                    Console.WriteLine($"[NewsService] API failed: {response.StatusCode}");
+                    return _cachedArticles ?? new List<NewsArticle>();
                 }
 
                 var jsonString = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonSerializer.Deserialize<AlphaVantageResponse>(jsonString, _jsonOptions);
+                
+                // Check for rate limit message
+                if (jsonString.Contains("\"Information\"") || jsonString.Contains("rate limit"))
+                {
+                    Console.WriteLine($"[NewsService] Rate limit hit. Response: {jsonString[..Math.Min(200, jsonString.Length)]}");
+                    return _cachedArticles ?? new List<NewsArticle>();
+                }
 
-                var newsItems = apiResponse?.Feed ?? apiResponse?.Items ?? new List<NewsItem>();
+                // Guard against non-JSON payloads (rate limits often return HTML/text)
+                var span = jsonString.AsSpan().TrimStart();
+                if (span.Length == 0 || (span[0] != '{' && span[0] != '['))
+                {
+                    Console.WriteLine("AlphaVantage returned non-JSON payload (likely rate limit reached).");
+                    return new List<NewsArticle>();
+                }
 
-                return newsItems.Select(item => new NewsArticle
+                AlphaVantageResponse? apiResponse;
+                try
+                {
+                    apiResponse = JsonSerializer.Deserialize<AlphaVantageResponse>(jsonString, _jsonOptions);
+                }
+                catch (JsonException ex)
+                {
+                    var sample = jsonString.Length > 300 ? jsonString[..300] + "..." : jsonString;
+                    Console.WriteLine($"Error parsing JSON: {ex.Message}. Payload sample: {sample}");
+                    return new List<NewsArticle>();
+                }
+
+                var newsItems = apiResponse?.Feed ?? new List<NewsItem>();
+                
+                var articles = newsItems.Select(item => new NewsArticle
                 {
                     Title = item.Title ?? "No Title",
                     Description = item.Summary ?? item.Description ?? "",
@@ -51,26 +92,19 @@ namespace TradingApp.Data
                     PublishedAt = ParseAlphaVantageDateTime(item.TimePublished ?? item.PublishedAtAlternative),
                     ImageUrl = item.BannerImage
                 }).ToList();
+
+                // Cache the results
+                _cachedArticles = articles;
+                _cacheExpiry = DateTime.UtcNow.Add(CacheDuration);
+                
+                Console.WriteLine($"[NewsService] Cached {articles.Count} articles until {_cacheExpiry:HH:mm:ss}");
+                
+                return articles;
             }
-            catch (JsonException ex)
+            catch (Exception ex)
             {
-                Console.WriteLine($"Error parsing JSON: {ex.Message}");
-                return new List<NewsArticle>();
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"HTTP request error: {ex.Message}");
-                return new List<NewsArticle>();
-            }
-            catch (TaskCanceledException ex)
-            {
-                Console.WriteLine($"Request timed out: {ex.Message}");
-                return new List<NewsArticle>();
-            }
-            catch (Exception)
-            {
-                // Rethrow unexpected exceptions
-                throw;
+                Console.WriteLine($"[NewsService] Error: {ex.Message}");
+                return _cachedArticles ?? new List<NewsArticle>();
             }
         }
 
@@ -95,7 +129,7 @@ namespace TradingApp.Data
         }
     }
 
-    internal class NewsArticle
+    public class NewsArticle
     {
         public required string Title { get; set; }
         public required string Description { get; set; }
@@ -105,13 +139,15 @@ namespace TradingApp.Data
         public string? ImageUrl { get; set; }
     }
 
-    internal class AlphaVantageResponse
+    public class AlphaVantageResponse
     {
         public List<NewsItem>? Feed { get; set; }
-        public List<NewsItem>? Items { get; set; }
+        
+        [JsonPropertyName("items")]
+        public string? Items { get; set; }
     }
 
-    internal class NewsItem
+    public class NewsItem
     {
         public string? Title { get; set; }
         public string? Url { get; set; }
