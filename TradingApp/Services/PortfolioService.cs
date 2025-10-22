@@ -50,14 +50,11 @@ namespace TradingApp.Services
             {
                 try
                 {
-                    if (!_stocks.StockList.TryGetValue(position.StockSymbol, out var stock))
-                        continue;
-
-                    value += position.TotalQuantity * stock.Price;
+                    value += (position.TotalQuantity * _stocks.StockList[position.StockSymbol].Price);
                 }
                 catch (KeyNotFoundException)
                 {
-                    throw new KeyNotFoundException($"Invalid stock symbol '{position.StockSymbol}'. Check that it exists in the Stocks constructor.");
+                    throw new KeyNotFoundException("Invalid stock symbol, check if it is correct and it is in the Stocks constructor.");
                 }
             }
             user.Portfolio.Value = value;
