@@ -1,6 +1,11 @@
 ﻿@namespace TradingApp.Components
 @using TradingApp.Models
+@using TradingApp.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject Stocks StockModel
+@inject UserService UserService
+@inject PortfolioService PortfolioService
+@inject AuthenticationStateProvider AuthStateProvider
 @implements IDisposable
 
 <div class="stocks-grid">
@@ -177,8 +182,72 @@
         }
     }
 
-    private void HandleTradeExecuted(TradingModal.TradeConfirmation trade) {
-        _notification.ShowTradeConfirmation(trade);
-        // TODO: execute trade via service if desired
+    /// <summary>
+    /// Handles trade execution after user confirms in the TradingModal
+    /// </summary>
+    private async Task HandleTradeExecuted(TradingModal.TradeConfirmation trade) {
+        try {
+            Console.WriteLine($"Trade execution started: {trade.TradeType} {trade.Shares} shares of {trade.Stock.Symbol}");
+
+            // Get the current authenticated user
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = await UserService.GetCurrentUserAsync(authState.User);
+
+            if (user == null) {
+                Console.WriteLine("Trade failed: User not authenticated");
+                _notification.ShowError("Please log in to execute trades");
+                return;
+            }
+
+            Console.WriteLine($"User authenticated: {user.Username} (ID: {user.Id})");
+
+            // Convert decimal shares to integer quantity (rounding down)
+            int quantity = (int)Math.Floor(trade.Shares);
+
+            if (quantity <= 0) {
+                Console.WriteLine($"Trade failed: Invalid quantity {quantity}");
+                _notification.ShowError("Invalid quantity. Must be at least 1 share.");
+                return;
+            }
+
+            Console.WriteLine($"Executing {trade.TradeType} for {quantity} shares at ${trade.PricePerShare}");
+
+            bool success;
+            if (trade.TradeType == TradingModal.TradeType.Buy) {
+                success = await UserService.ExecuteBuyTrade(user, trade.Stock.Symbol, quantity);
+                if (!success) {
+                    Console.WriteLine($"Buy trade failed: Insufficient funds (Balance: ${user.CurrentCashBalance})");
+                    _notification.ShowError($"Insufficient funds to complete purchase. Available: ${user.CurrentCashBalance:N2}");
+                    return;
+                }
+                Console.WriteLine($"Buy trade successful! New balance: ${user.CurrentCashBalance}");
+            } else {
+                success = await UserService.ExecuteSellTrade(user, trade.Stock.Symbol, quantity);
+                if (!success) {
+                    Console.WriteLine($"Sell trade failed: Insufficient shares");
+                    _notification.ShowError("Insufficient shares to complete sale");
+                    return;
+                }
+                Console.WriteLine($"Sell trade successful! New balance: ${user.CurrentCashBalance}");
+            }
+
+            // Show success notification
+            _notification.ShowTradeConfirmation(trade);
+
+            // Notify portfolio service that a trade was executed
+            // This will trigger the UserDashboard to refresh automatically
+            Console.WriteLine("Notifying portfolio changed event...");
+            PortfolioService.NotifyPortfolioChanged();
+
+            Console.WriteLine("Trade execution completed successfully!");
+
+        } catch (ArgumentException ex) {
+            Console.WriteLine($"Trade execution error (ArgumentException): {ex.Message}");
+            _notification.ShowError(ex.Message);
+        } catch (Exception ex) {
+            Console.WriteLine($"Trade execution error (Unexpected): {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            _notification.ShowError("An error occurred while processing the trade. Please try again.");
+        }
     }
 }
