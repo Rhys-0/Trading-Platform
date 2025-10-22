@@ -61,6 +61,7 @@ else
                                     <th>Name</th>
                                     <th>Ticker</th>
                                     <th>Quantity</th>
+                                    <th>Total Value</th>
                                     <th>Avg. Price</th>
                                     <th>Current Price</th>
                                     <th>Daily Change</th>
@@ -76,6 +77,7 @@ else
                                             <td>@holding.Name</td>
                                             <td>@holding.Ticker</td>
                                             <td>@holding.Quantity</td>
+                                            <td>@((holding.Quantity * holding.CurrentPrice).ToString("C"))</td>
                                             <td>@holding.AveragePrice.ToString("C")</td>
                                             <td>@holding.CurrentPrice.ToString("C")</td>
                                             <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
@@ -109,14 +111,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (userId == null)
-        {
-            if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
-                return;
-
-            TargetUser = AuthService.CurrentUser;
-        }
-        else
+        if (userId.HasValue)
         {
             TargetUser = await UserManager.GetUserById(userId.Value);
             if (TargetUser == null)
@@ -125,19 +120,57 @@ else
                 return;
             }
         }
+        else
+        {
+            if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
+                return;
 
-        try
-        {
-            PortfolioService.UpdateUserPortfolio(TargetUser);
+            TargetUser = await UserManager.GetUserById(AuthService.CurrentUser.Id);
         }
-        catch (Exception ex)
+
+        if (TargetUser.Portfolio == null)
         {
-            Console.WriteLine($"Portfolio update skipped: {ex.Message}");
+            var success = await UserManager.LoadUserPortfolio(TargetUser);
+            if (!success) return;
         }
+
+        PortfolioService.UpdateUserPortfolio(TargetUser);
 
         HoldingsManager.LoadHoldings(
             positions: TargetUser.Portfolio?.Positions ?? new Dictionary<string, Position>(),
             stockList: Stocks?.StockList ?? new ConcurrentDictionary<string, Stock>()
         );
+
+        PortfolioService.OnPortfolioChanged += HandlePortfolioChanged;
+    }
+
+    private async void HandlePortfolioChanged()
+    {
+        User? freshUser;
+
+        if (userId.HasValue)
+        {
+            freshUser = await UserManager.GetUserById(userId.Value);
+        }
+        else
+        {
+            freshUser = await UserManager.GetUserById(AuthService.CurrentUser!.Id);
+        }
+
+        if (freshUser == null) return;
+
+        TargetUser = freshUser;
+
+        HoldingsManager.LoadHoldings(
+            positions: TargetUser.Portfolio?.Positions ?? new Dictionary<string, Position>(),
+            stockList: Stocks?.StockList ?? new ConcurrentDictionary<string, Stock>()
+        );
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        PortfolioService.OnPortfolioChanged -= HandlePortfolioChanged;
     }
 }
