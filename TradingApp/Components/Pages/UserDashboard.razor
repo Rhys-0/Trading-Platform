@@ -39,10 +39,18 @@ else
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="card shadow-sm rounded-3 p-3">
-                    <h2 class="h5 text-muted mb-2">% Change Since Purchase</h2>
+                    <h2 class="h5 text-muted mb-2">Profit/Loss (%)</h2>
                     <p class="fs-2 fw-bold @(HoldingsManager.FlatChange >= 0 ? "text-success" : "text-danger") mb-0">
                         @(HoldingsManager.FlatChange >= 0 ? "+" : "")@HoldingsManager.FlatChange.ToString("C")
                         <span class="fs-6 fw-normal">(@(HoldingsManager.PercentageChange >= 0 ? "+" : "")@HoldingsManager.PercentageChange.ToString("P"))</span>
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card shadow-sm rounded-3 p-3">
+                    <h2 class="h5 text-muted mb-2">Current Cash Balance</h2>
+                    <p class="fs-2 fw-bold text-primary mb-0">
+                        @((TargetUser?.CurrentCashBalance ?? 0m).ToString("C"))
                     </p>
                 </div>
             </div>
@@ -64,7 +72,7 @@ else
                                     <th>Total Value</th>
                                     <th>Avg. Price</th>
                                     <th>Current Price</th>
-                                    <th>Daily Change</th>
+                                    <th>P/L</th>
                                     <th>Portfolio Weight</th>
                                 </tr>
                             </thead>
