@@ -1,7 +1,11 @@
+ TradingApp\Components\TradingModal.razor
 @namespace TradingApp.Components
 @using TradingApp.Models
-@using Microsoft.JSInterop
+@using TradingApp.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IJSRuntime JS
+@inject UserService UserService
+@inject AuthenticationStateProvider AuthStateProvider
 
 @if (_isVisible)
 {
@@ -53,10 +57,18 @@
                             <span class="value">≈ @_calculatedShares.ToString("N4")</span>
                         </div>
                         <div class="summary-item">
-                            <span class="label">Available</span>
-                            <span class="value">$@_availableBalance.ToString("N2")</span>
+                            <span class="label">@(_tradeType == TradeType.Buy ? "Available Cash" : "Owned Shares")</span>
+                            <span class="value">@(_tradeType == TradeType.Buy ? $"${_availableBalance:N2}" : $"{_ownedShares}")</span>
                         </div>
                     </div>
+
+                    @* Debug info - remove after fixing *@
+                    @if (!_canExecuteTrade)
+                    {
+                        <div style="color: red; font-size: 12px; margin-top: 10px;">
+                            Debug: Cannot execute trade. Error: @_errorMessage
+                        </div>
+                    }
                 </div>
 
                 <!-- Modal Footer -->
@@ -67,7 +79,7 @@
                     </div>
                     <button class="execute-btn @(_tradeType.ToString().ToLower())"
                             @onclick="ExecuteTrade"
-                            disabled="@(!_confirmTrade || _investmentAmount <= 0)">
+                            disabled="@(!_confirmTrade || _investmentAmount <= 0 || !_canExecuteTrade)">
                         @_tradeType.ToString() Stock
                     </button>
                 </div>
@@ -84,22 +96,99 @@
     private decimal _investmentAmount = 0;
     private decimal _calculatedShares = 0;
     private decimal _estimatedTotal = 0;
-    private decimal _availableBalance = 10000; // Mock balance
-    private decimal _maxInvestment => _tradeType == TradeType.Buy ? _availableBalance : 999999;
+    private decimal _availableBalance = 0;
+    private int _ownedShares = 0;
+    private decimal _maxInvestment => _tradeType == TradeType.Buy ? _availableBalance : (_ownedShares * (_selectedStock?.Price ?? 0));
     private bool _confirmTrade = false;
+    private bool _canExecuteTrade = false;
+    private string? _errorMessage = null;
 
     [Parameter] public EventCallback<TradeConfirmation> OnTradeExecuted { get; set; }
 
-    public void OpenModal(Stock stock, TradeType tradeType)
+    public async Task OpenModal(Stock stock, TradeType tradeType)
     {
+        Console.WriteLine($"🔍 TRADING MODAL: Opening modal for {stock.Symbol} - {tradeType}");
+        
         _selectedStock = stock;
         _tradeType = tradeType;
         _investmentAmount = 0;
         _calculatedShares = 0;
         _estimatedTotal = 0;
         _confirmTrade = false;
+        _canExecuteTrade = false;
+        _errorMessage = null;
+
+        // Get user's current balance and holdings
+        await LoadUserBalance();
+
         _isVisible = true;
         StateHasChanged();
+    }
+
+    private async Task LoadUserBalance()
+    {
+        try
+        {
+            Console.WriteLine("🔍 TRADING MODAL: Starting LoadUserBalance...");
+            
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            Console.WriteLine($"🔍 TRADING MODAL: Auth state retrieved. IsAuthenticated: {authState.User.Identity?.IsAuthenticated}");
+            
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                _errorMessage = "User not authenticated";
+                Console.WriteLine("🔍 TRADING MODAL: User is not authenticated");
+                _canExecuteTrade = false;
+                return;
+            }
+
+            var user = await UserService.GetCurrentUserAsync(authState.User);
+            
+            if (user == null)
+            {
+                _errorMessage = "User not found";
+                Console.WriteLine("🔍 TRADING MODAL: User is null after GetCurrentUserAsync");
+                _availableBalance = 0;
+                _ownedShares = 0;
+                _canExecuteTrade = false;
+                return;
+            }
+
+            Console.WriteLine($"🔍 TRADING MODAL: User loaded: {user.Username}");
+            Console.WriteLine($"🔍 TRADING MODAL: Current balance: ${user.CurrentCashBalance:N2}");
+            Console.WriteLine($"🔍 TRADING MODAL: Starting balance: ${user.StartingCashBalance:N2}");
+            Console.WriteLine($"🔍 TRADING MODAL: Portfolio loaded: {user.Portfolio != null}");
+
+            _availableBalance = user.CurrentCashBalance;
+
+            // Get owned shares for sell operations
+            if (_tradeType == TradeType.Sell && _selectedStock != null)
+            {
+                if (user.Portfolio?.Positions != null &&
+                    user.Portfolio.Positions.TryGetValue(_selectedStock.Symbol, out var position))
+                {
+                    _ownedShares = position.TotalQuantity;
+                    Console.WriteLine($"🔍 TRADING MODAL: Owned shares for {_selectedStock.Symbol}: {_ownedShares}");
+                }
+                else
+                {
+                    _ownedShares = 0;
+                    Console.WriteLine($"🔍 TRADING MODAL: No position found for {_selectedStock.Symbol}");
+                }
+            }
+
+            _canExecuteTrade = true;
+            Console.WriteLine($"🔍 TRADING MODAL: LoadUserBalance completed successfully. Can execute: {_canExecuteTrade}");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            Console.WriteLine($"🔍 TRADING MODAL ERROR: {ex.Message}");
+            Console.WriteLine($"🔍 TRADING MODAL ERROR STACK: {ex.StackTrace}");
+            _availableBalance = 0;
+            _ownedShares = 0;
+            _canExecuteTrade = false;
+        }
     }
 
     private void CloseModal()

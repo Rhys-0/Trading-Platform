@@ -1,4 +1,3 @@
-@* filepath: c:\Users\Leo\Desktop\Papi\Repos\Trading-Platform\TradingApp\Components\TradeNotification.razor *@
 @namespace TradingApp.Components
 @using TradingApp.Models
 
@@ -38,6 +37,35 @@
             Message = $"{trade.Shares:F4} shares of {trade.Stock.Symbol} at ${trade.PricePerShare:F2}"
         };
 
+        AddNotification(notification);
+    }
+
+    public void ShowError(string message)
+    {
+        var notification = new Notification
+        {
+            Type = NotificationType.Error,
+            Title = "Trade Failed",
+            Message = message
+        };
+
+        AddNotification(notification);
+    }
+
+    public void ShowWarning(string message)
+    {
+        var notification = new Notification
+        {
+            Type = NotificationType.Warning,
+            Title = "Warning",
+            Message = message
+        };
+
+        AddNotification(notification);
+    }
+
+    private void AddNotification(Notification notification)
+    {
         _notifications.Add(notification);
         StateHasChanged();
 

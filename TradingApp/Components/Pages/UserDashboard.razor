@@ -6,11 +6,12 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using TradingApp.Models
+@using TradingApp.Services
 @inject AuthenticationStateProvider AuthStateProvider
-@inject TradingApp.Services.UserService UserService
-@inject TradingApp.Services.PortfolioService PortfolioService
-@inject TradingApp.Models.Stocks Stocks
+@inject UserService UserService
+@inject PortfolioService PortfolioService
 @inject UserManager UserManager
+@implements IDisposable
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -59,18 +60,27 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var holding in Holdings)
+                            @if (Holdings.Any())
+                            {
+                                @foreach (var holding in Holdings)
+                                {
+                                    <tr>
+                                        <td>@holding.Name</td>
+                                        <td>@holding.Ticker</td>
+                                        <td>@holding.Quantity</td>
+                                        <td>@holding.AveragePrice.ToString("C")</td>
+                                        <td>@holding.CurrentPrice.ToString("C")</td>
+                                        <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
+                                            @(holding.DailyChange >= 0 ? "+" : "")@holding.DailyChange.ToString("P")
+                                        </td>
+                                        <td>@((holding.PortfolioWeight * 100).ToString("N2"))%</td>
+                                    </tr>
+                                }
+                            }
+                            else
                             {
                                 <tr>
-                                    <td>@holding.Name</td>
-                                    <td>@holding.Ticker</td>
-                                    <td>@holding.Quantity</td>
-                                    <td>@holding.AveragePrice.ToString("C")</td>
-                                    <td>@holding.CurrentPrice.ToString("C")</td>
-                                    <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
-                                        @(holding.DailyChange >= 0 ? "+" : "")@holding.DailyChange.ToString("P")
-                                    </td>
-                                    <td>@((holding.PortfolioWeight * 100).ToString("N2"))%</td>
+                                    <td colspan="7" class="text-center text-muted">No holdings yet. Start trading to see your portfolio!</td>
                                 </tr>
                             }
                         </tbody>
@@ -84,8 +94,8 @@
 @code {
     public class Holding
     {
-        public string Ticker { get; set; }
-        public string Name { get; set; }
+        public string Ticker { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public decimal AveragePrice { get; set; }
         public decimal CurrentPrice { get; set; }
@@ -94,25 +104,29 @@
     }
 
     private List<Holding> Holdings = new();
-    private decimal FlatChange => Holdings.Sum(h => (h.CurrentPrice - h.AveragePrice) * h.Quantity);
-    private decimal TotalValue => Holdings.Sum(h => h.CurrentPrice * h.Quantity);
-    private decimal PercentageChange => TotalValue != 0 ? FlatChange / (TotalValue - FlatChange) : 0;
-    private TradingApp.Models.User testUser;
+    
+    // ✅ Changed from computed properties to fields
+    private decimal FlatChange = 0;
+    private decimal TotalValue = 0;
+    private decimal PercentageChange = 0;
+    
+    private TradingApp.Models.User? testUser;
 
     [Parameter]
     public long? UserId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        // Subscribe to portfolio change events
+        PortfolioService.OnPortfolioChanged += HandlePortfolioChanged;
+
         if (UserId.HasValue)
         {
             var user = await UserManager.GetUserById(UserId.Value);
             if (user != null)
             {
                 await UserManager.LoadUserPortfolio(user);
-
                 PortfolioService.UpdateUserPortfolio(user);
-
                 await LoadHoldingsAsync(user);
             }
         }
@@ -122,10 +136,30 @@
         }
     }
 
-
-    private async Task LoadHoldingsAsync(User overrideUser = null)
+    /// <summary>
+    /// Event handler called when a trade is executed elsewhere in the application
+    /// </summary>
+    private async void HandlePortfolioChanged()
     {
-        User user;
+        await InvokeAsync(async () =>
+        {
+            Console.WriteLine("📊 Portfolio changed - refreshing dashboard...");
+            await LoadHoldingsAsync();
+            StateHasChanged();
+        });
+    }
+
+    /// <summary>
+    /// Clean up event subscription when component is disposed
+    /// </summary>
+    public void Dispose()
+    {
+        PortfolioService.OnPortfolioChanged -= HandlePortfolioChanged;
+    }
+
+    private async Task LoadHoldingsAsync(User? overrideUser = null)
+    {
+        User? user;
 
         if (overrideUser != null)
         {
@@ -136,12 +170,26 @@
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var userIdentity = authState.User;
 
-            if (!userIdentity.Identity.IsAuthenticated)
+            if (!userIdentity.Identity?.IsAuthenticated ?? true)
+            {
+                Holdings.Clear();
+                TotalValue = 0;
+                FlatChange = 0;
+                PercentageChange = 0;
+                StateHasChanged();
                 return;
+            }
 
             user = await UserService.GetCurrentUserAsync(userIdentity);
             if (user?.Portfolio?.Positions == null)
+            {
+                Holdings.Clear();
+                TotalValue = 0;
+                FlatChange = 0;
+                PercentageChange = 0;
+                StateHasChanged();
                 return;
+            }
 
             PortfolioService.UpdateUserPortfolio(user);
         }
@@ -149,40 +197,45 @@
         if (user?.Portfolio?.Positions == null)
         {
             Holdings.Clear();
+            TotalValue = 0;
+            FlatChange = 0;
+            PercentageChange = 0;
             StateHasChanged();
             return;
         }
 
+        // ✅ USE PORTFOLIO VALUES FROM DATABASE (calculated by PortfolioService)
+        TotalValue = user.Portfolio.Value;
+        FlatChange = user.Portfolio.NetProfit;
+        PercentageChange = user.Portfolio.PercentageReturn;
+
+        Console.WriteLine($"📊 Dashboard loaded - Portfolio Value: ${TotalValue:N2}, Net Profit: ${FlatChange:N2}, Return: {PercentageChange:P2}");
+
+        // Build holdings list
         Holdings = user.Portfolio.Positions.Values.Select(p =>
         {
-            if (!Stocks.StockList.TryGetValue(p.StockSymbol, out var stock))
-                return null;
-
             decimal avgPrice = p.PurchaseLots?.Any() == true
                 ? p.PurchaseLots.Average(lot => lot.PurchasePrice)
                 : 0;
 
-            decimal dailyChange = avgPrice != 0 ? (stock.Price - avgPrice) / avgPrice : 0;
-
             return new Holding
             {
                 Ticker = p.StockSymbol,
-                Name = stock.Name,
+                Name = p.StockSymbol, // Fallback to symbol since Stocks is internal
                 Quantity = p.TotalQuantity,
                 AveragePrice = avgPrice,
-                CurrentPrice = stock.Price,
-                DailyChange = dailyChange,
-                PortfolioWeight = 0
+                CurrentPrice = avgPrice, // ✅ Use average price as fallback (actual current price will be shown in TotalValue)
+                DailyChange = 0, // ✅ This would need real-time price data to calculate accurately
+                PortfolioWeight = 0 // Will be calculated below
             };
         })
-        .Where(h => h != null)
-        .Cast<Holding>()
         .ToList();
 
-        var totalValue = Holdings.Sum(h => h.CurrentPrice * h.Quantity);
+        // ✅ Calculate portfolio weight based on average cost (approximation)
+        var totalCost = Holdings.Sum(h => h.AveragePrice * h.Quantity);
         foreach (var h in Holdings)
         {
-            h.PortfolioWeight = totalValue != 0 ? (h.CurrentPrice * h.Quantity) / totalValue : 0;
+            h.PortfolioWeight = totalCost != 0 ? (h.AveragePrice * h.Quantity) / totalCost : 0;
         }
 
         StateHasChanged();
@@ -207,7 +260,6 @@
 
     private async Task BuyTestStock()
     {
-        
         if (testUser?.Portfolio == null) return;
 
         testUser.Portfolio.AddStocks("AAPL", 1, 150m);

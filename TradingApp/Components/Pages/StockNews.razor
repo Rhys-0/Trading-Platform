@@ -1,4 +1,5 @@
 @page "/news"
+@rendermode InteractiveServer
 @using TradingApp.Data
 @inject NewsService NewsService
 
@@ -25,24 +26,61 @@
     }
     else
     {
-        <div class="news-grid">
-            @foreach (var article in articles)
-            {
-                <div class="news-item">
-                    <NewsCard 
-                        Title="@article.Title"
-                        Description="@article.Description"
-                        Url="@article.Url"
-                        Source="@article.Source"
-                        PublishedAt="@article.PublishedAt" />
+        <div class="carousel-container">
+            <div class="carousel-info">
+                <span>Viewing @(GetStartIndex()) - @(GetEndIndex()) of @articles.Count articles</span>
+            </div>
+
+            <div class="carousel-wrapper">
+                <button class="carousel-btn prev" @onclick="PreviousSlide" disabled="@(currentPage == 0)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <div class="carousel-track-container">
+                    <div class="carousel-track" style="transform: translateX(-@(currentPage * 100)%)">
+                        @for (int pageIndex = 0; pageIndex < GetTotalPages(); pageIndex++)
+                        {
+                            var page = pageIndex;
+                            <div class="carousel-page">
+                                @foreach (var article in GetArticlesForPage(page))
+                                {
+                                    <div class="carousel-item-wrapper">
+                                        <NewsCard 
+                                            Title="@article.Title"
+                                            Description="@TruncateDescription(article.Description, 150)"
+                                            Url="@article.Url"
+                                            Source="@article.Source"
+                                            PublishedAt="@article.PublishedAt" />
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
-            }
+
+                <button class="carousel-btn next" @onclick="NextSlide" disabled="@(currentPage >= GetTotalPages() - 1)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="carousel-indicators">
+                @for (int i = 0; i < GetTotalPages(); i++)
+                {
+                    var pageIndex = i;
+                    <button class="indicator @(currentPage == pageIndex ? "active" : "")" 
+                            @onclick="() => GoToPage(pageIndex)"
+                            aria-label="Go to page @(pageIndex + 1)">
+                    </button>
+                }
+            </div>
         </div>
     }
 </div>
 
 @code {
     private List<NewsArticle>? articles;
+    private int currentPage = 0;
+    private const int articlesPerPage = 3;
 
     protected override async Task OnInitializedAsync()
     {
@@ -55,5 +93,65 @@
             Console.WriteLine($"Error in StockNews: {ex.Message}");
             articles = new List<NewsArticle>();
         }
+    }
+
+    private List<NewsArticle> GetArticlesForPage(int pageIndex)
+    {
+        if (articles == null || !articles.Any())
+            return new List<NewsArticle>();
+
+        int startIndex = pageIndex * articlesPerPage;
+        return articles.Skip(startIndex).Take(articlesPerPage).ToList();
+    }
+
+    private void NextSlide()
+    {
+        if (currentPage < GetTotalPages() - 1)
+        {
+            currentPage++;
+        }
+    }
+
+    private void PreviousSlide()
+    {
+        if (currentPage > 0)
+        {
+            currentPage--;
+        }
+    }
+
+    private void GoToPage(int pageIndex)
+    {
+        if (pageIndex >= 0 && pageIndex < GetTotalPages())
+        {
+            currentPage = pageIndex;
+        }
+    }
+
+    private int GetTotalPages()
+    {
+        if (articles == null || articles.Count == 0)
+            return 0;
+
+        return (int)Math.Ceiling((double)articles.Count / articlesPerPage);
+    }
+
+    private int GetStartIndex()
+    {
+        return (currentPage * articlesPerPage) + 1;
+    }
+
+    private int GetEndIndex()
+    {
+        if (articles == null) return 0;
+        return Math.Min((currentPage + 1) * articlesPerPage, articles.Count);
+    }
+
+    private string TruncateDescription(string description, int maxLength)
+    {
+        if (string.IsNullOrEmpty(description) || description.Length <= maxLength)
+            return description;
+
+        return description[..maxLength] + "...";
     }
 }
