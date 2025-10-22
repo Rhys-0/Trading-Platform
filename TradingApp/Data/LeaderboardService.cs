@@ -11,7 +11,7 @@ namespace TradingApp.Data {
         private readonly ILogger<LeaderboardService> _logger;
         private readonly Stocks _stocks;
 
-        internal LeaderboardService(DatabaseConnection connection, ILogger<LeaderboardService> logger, Stocks stocks) {
+        public LeaderboardService(DatabaseConnection connection, ILogger<LeaderboardService> logger, Stocks stocks) {
             _connection = connection;
             _logger = logger;
             _stocks = stocks;
