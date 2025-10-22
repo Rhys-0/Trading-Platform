@@ -1,3 +1,4 @@
+radingApp\Components\Pages\StockNews.razor.css
 .container-fluid {
     max-width: 1400px;
 }
@@ -52,8 +53,8 @@ h2 {
 .news-container {
     min-height: 100vh;
     padding: 2rem;
-    background: linear-gradient(135deg, #6b46c1 0%, #4299e1 100%);
-    color: white;
+    background: #f8fafc; /* solid light gray */
+    color: #2d3748; /* dark gray */
 }
 
 .header-section {
@@ -66,15 +67,12 @@ h2 {
         font-size: 3rem;
         font-weight: 700;
         margin-bottom: 1rem;
-        background: linear-gradient(to right, #fff, #e2e8f0);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #1a202c; /* solid dark */
     }
 
     .header-section .lead {
         font-size: 1.25rem;
-        color: #e2e8f0;
+        color: #4a5568; /* dark gray */
         max-width: 600px;
         margin: 0 auto;
     }
@@ -87,9 +85,9 @@ h2 {
 }
 
 .alert-custom {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
+    background: rgba(255, 255, 255, 0.95); /* opaque white */
+    border: 1px solid #e2e8f0; 
+    color: #2d3748; 
     border-radius: 10px;
     padding: 1rem;
     backdrop-filter: blur(10px);
@@ -111,9 +109,9 @@ h2 {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    color: white;
+    background: rgba(107, 114, 128, 0.15); /* darker gray */
+    border: 2px solid rgba(107, 114, 128, 0.3); 
+    color: #4a5568; /* dark gray */
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -136,9 +134,9 @@ h2 {
     }
 
     .carousel-btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.4);
+        background: rgba(107, 114, 128, 0.25); /* hover state */
         transform: translateY(-50%) scale(1.1);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
     }
 
     .carousel-btn:disabled {
@@ -174,7 +172,7 @@ h2 {
 }
 
 .carousel-info {
-    color: white;
+    color: #4a5568; /* dark gray */
     font-size: 1.1rem;
     font-weight: 500;
     text-align: center;
@@ -192,7 +190,7 @@ h2 {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(107, 114, 128, 0.3); /* gray */
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -200,17 +198,16 @@ h2 {
 }
 
     .indicator:hover {
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(107, 114, 128, 0.5); /* hover */
         transform: scale(1.2);
     }
 
     .indicator.active {
-        background: white;
+        background: #667eea; /*  purple accent */
         width: 30px;
         border-radius: 6px;
     }
 
-/* Card Overrides - Fixed height for consistency */
 ::deep .card {
     background: rgba(255, 255, 255, 0.95);
     border: none;
