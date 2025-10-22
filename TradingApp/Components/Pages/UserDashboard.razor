@@ -39,7 +39,7 @@ else
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="card shadow-sm rounded-3 p-3">
-                    <h2 class="h5 text-muted mb-2">Change (24hrs)</h2>
+                    <h2 class="h5 text-muted mb-2">% Change Since Purchase</h2>
                     <p class="fs-2 fw-bold @(HoldingsManager.FlatChange >= 0 ? "text-success" : "text-danger") mb-0">
                         @(HoldingsManager.FlatChange >= 0 ? "+" : "")@HoldingsManager.FlatChange.ToString("C")
                         <span class="fs-6 fw-normal">(@(HoldingsManager.PercentageChange >= 0 ? "+" : "")@HoldingsManager.PercentageChange.ToString("P"))</span>
