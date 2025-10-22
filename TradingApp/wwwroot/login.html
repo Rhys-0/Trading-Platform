@@ -164,11 +164,11 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            console.log('🔍 LOGIN DEBUG: DebugForm clicked');
-            console.log('🔍 LOGIN DEBUG: Email:', email);
-            console.log('🔍 LOGIN DEBUG: Password:', password);
-            console.log('🔍 LOGIN DEBUG: Email length:', email.length);
-            console.log('🔍 LOGIN DEBUG: Password length:', password.length);
+            console.log('LOGIN DEBUG: DebugForm clicked');
+            console.log('LOGIN DEBUG: Email:', email);
+            console.log('LOGIN DEBUG: Password:', password);
+            console.log('LOGIN DEBUG: Email length:', email.length);
+            console.log('LOGIN DEBUG: Password length:', password.length);
         }
 
         function setLoading(loading) {
@@ -193,9 +193,9 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            console.log('🔍 LOGIN DEBUG: Form submitted');
-            console.log('🔍 LOGIN DEBUG: Email:', email);
-            console.log('🔍 LOGIN DEBUG: Password:', password);
+            console.log('LOGIN DEBUG: Form submitted');
+            console.log('LOGIN DEBUG: Email:', email);
+            console.log('LOGIN DEBUG: Password:', password);
             
             if (!email || !password) {
                 showError('Please fill in all required fields.');
@@ -206,22 +206,22 @@
             clearError();
             
             try {
-                console.log('🔍 LOGIN DEBUG: Attempting login...');
+                console.log('LOGIN DEBUG: Attempting login...');
                 
                 // For now, simulate a login attempt
                 // In a real app, this would call your API
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 // Simulate login success for demo purposes
-                console.log('🔍 LOGIN DEBUG: Login successful - redirecting to dashboard');
+                console.log('LOGIN DEBUG: Login successful - redirecting to dashboard');
                 window.location.href = '/dashboard';
                 
             } catch (error) {
-                console.log('🔍 LOGIN DEBUG: Login failed:', error.message);
+                console.log('LOGIN DEBUG: Login failed:', error.message);
                 showError('Invalid credentials. Please try again.');
             } finally {
                 setLoading(false);
-                console.log('🔍 LOGIN DEBUG: Login process completed');
+                console.log('LOGIN DEBUG: Login process completed');
             }
         });
     </script>

@@ -464,30 +464,30 @@
         _successMessage = null;
         _isSubmitting = true;
         
-        Console.WriteLine($"🔍 REGISTRATION DEBUG: Starting registration for {_model.FirstName} {_model.LastName}");
-        Console.WriteLine($"🔍 REGISTRATION DEBUG: Username: {_model.Username}, Email: {_model.Email}");
-        Console.WriteLine($"🔍 REGISTRATION DEBUG: Terms accepted: {_model.AgreeToTerms}");
+        Console.WriteLine($"REGISTRATION DEBUG: Starting registration for {_model.FirstName} {_model.LastName}");
+        Console.WriteLine($"REGISTRATION DEBUG: Username: {_model.Username}, Email: {_model.Email}");
+        Console.WriteLine($"REGISTRATION DEBUG: Terms accepted: {_model.AgreeToTerms}");
         
         try {
             bool success = await AuthService.RegisterAsync(_model.Username, _model.Email, _model.Password, _model.FirstName, _model.LastName);
-            Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration result: {success}");
+            Console.WriteLine($"REGISTRATION DEBUG: Registration result: {success}");
             
             if (!success) {
                 _errorMessage = "Registration failed. The username or email may already be in use. Please try again.";
-                Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration failed - showing error message");
+                Console.WriteLine($"REGISTRATION DEBUG: Registration failed - showing error message");
                 return;
             }
             
-            Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration successful - redirecting to dashboard");
+            Console.WriteLine($"REGISTRATION DEBUG: Registration successful - redirecting to dashboard");
             
             // Redirect directly to dashboard
             Nav.NavigateTo("/dashboard");
         } catch (Exception ex) {
-            Console.WriteLine($"🔍 REGISTRATION DEBUG: Exception occurred: {ex.Message}");
+            Console.WriteLine($"REGISTRATION DEBUG: Exception occurred: {ex.Message}");
             _errorMessage = "An unexpected error occurred. Please try again.";
         } finally {
             _isSubmitting = false;
-            Console.WriteLine($"🔍 REGISTRATION DEBUG: Registration process completed");
+            Console.WriteLine($"REGISTRATION DEBUG: Registration process completed");
         }
     }
 

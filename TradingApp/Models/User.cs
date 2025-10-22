@@ -4,8 +4,8 @@
 namespace TradingApp.Models {
     public class User {
         public int Id { get; set; }
-        public string Username { get; set; } = string.Empty; // No set needed unless users being able to change their username is implemented
-        public string Email { get; set; } = string.Empty; // No set needed unless users being able to change their emails is implemented
+        public string Username { get; set; } = string.Empty; 
+        public string Email { get; set; } = string.Empty; 
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public decimal StartingCashBalance { get; set; }
