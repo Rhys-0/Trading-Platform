@@ -47,4 +47,4 @@ namespace TradingApp.Models
             PriceUpdated?.Invoke(symbol, price);
         }
     }
-} // test
+}

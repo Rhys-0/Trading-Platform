@@ -51,13 +51,10 @@ namespace TradingApp.Services
             decimal value = 0.00m;
             foreach (var position in user.Portfolio.Positions.Values)
             {
-                try
-                {
-                    value += (position.TotalQuantity * _stocks.StockList[position.StockSymbol].Price);
-                }
-                catch (KeyNotFoundException)
-                {
-                    throw new KeyNotFoundException("Invalid stock symbol, check if it is correct and it is in the Stocks constructor.");
+                if (_stocks.StockList.TryGetValue(position.StockSymbol, out var stockInfo)) {
+                    value += position.TotalQuantity * stockInfo.Price;
+                } else {
+                    continue;
                 }
             }
             user.Portfolio.Value = value;
