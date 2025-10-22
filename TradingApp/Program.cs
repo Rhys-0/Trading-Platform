@@ -14,7 +14,6 @@ builder.Services.AddRazorComponents()
 
 // Singletons
 builder.Services.AddSingleton<DatabaseConnection>();
-builder.Services.AddSingleton<NewsService>();
 builder.Services.AddSingleton<Stocks>();
 
 // Scoped classes
@@ -23,12 +22,12 @@ builder.Services.AddSingleton<UserManager>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<PortfolioService>();
 
-// Register HttpClient for Stock News API calls
+// Register HttpClient for Stock News API calls (only this registration)
 builder.Services.AddHttpClient<NewsService>(client =>
 {
     client.BaseAddress = new Uri("https://www.alphavantage.co/");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("TradingApp/1.0");
 });
-builder.Services.AddScoped<NewsService>();
 
 // Background Services
 builder.Services.AddHostedService<StockPriceService>();

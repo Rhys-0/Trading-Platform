@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace TradingApp.Data
 {
-    internal class NewsService
+    public class NewsService
     {
         private readonly HttpClient _http;
         private readonly string _apiKey;
@@ -38,9 +38,28 @@ namespace TradingApp.Data
                 }
 
                 var jsonString = await response.Content.ReadAsStringAsync();
-                var apiResponse = JsonSerializer.Deserialize<AlphaVantageResponse>(jsonString, _jsonOptions);
+                
+                // Guard against non-JSON payloads (rate limits often return HTML/text)
+                var span = jsonString.AsSpan().TrimStart();
+                if (span.Length == 0 || (span[0] != '{' && span[0] != '['))
+                {
+                    Console.WriteLine("AlphaVantage returned non-JSON payload (likely rate limit reached).");
+                    return new List<NewsArticle>();
+                }
 
-                var newsItems = apiResponse?.Feed ?? apiResponse?.Items ?? new List<NewsItem>();
+                AlphaVantageResponse? apiResponse;
+                try
+                {
+                    apiResponse = JsonSerializer.Deserialize<AlphaVantageResponse>(jsonString, _jsonOptions);
+                }
+                catch (JsonException ex)
+                {
+                    var sample = jsonString.Length > 300 ? jsonString[..300] + "..." : jsonString;
+                    Console.WriteLine($"Error parsing JSON: {ex.Message}. Payload sample: {sample}");
+                    return new List<NewsArticle>();
+                }
+
+                var newsItems = apiResponse?.Feed ?? new List<NewsItem>();
 
                 return newsItems.Select(item => new NewsArticle
                 {
@@ -52,11 +71,6 @@ namespace TradingApp.Data
                     ImageUrl = item.BannerImage
                 }).ToList();
             }
-            catch (JsonException ex)
-            {
-                Console.WriteLine($"Error parsing JSON: {ex.Message}");
-                return new List<NewsArticle>();
-            }
             catch (HttpRequestException ex)
             {
                 Console.WriteLine($"HTTP request error: {ex.Message}");
@@ -67,10 +81,10 @@ namespace TradingApp.Data
                 Console.WriteLine($"Request timed out: {ex.Message}");
                 return new List<NewsArticle>();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Rethrow unexpected exceptions
-                throw;
+                Console.WriteLine($"Unexpected error in NewsService: {ex.Message}");
+                return new List<NewsArticle>();
             }
         }
 
@@ -95,7 +109,7 @@ namespace TradingApp.Data
         }
     }
 
-    internal class NewsArticle
+    public class NewsArticle
     {
         public required string Title { get; set; }
         public required string Description { get; set; }
@@ -105,13 +119,16 @@ namespace TradingApp.Data
         public string? ImageUrl { get; set; }
     }
 
-    internal class AlphaVantageResponse
+    public class AlphaVantageResponse
     {
         public List<NewsItem>? Feed { get; set; }
-        public List<NewsItem>? Items { get; set; }
+        
+        // Alpha Vantage returns this as a string (e.g., "50"), not a number or array
+        [JsonPropertyName("items")]
+        public string? Items { get; set; }
     }
 
-    internal class NewsItem
+    public class NewsItem
     {
         public string? Title { get; set; }
         public string? Url { get; set; }
