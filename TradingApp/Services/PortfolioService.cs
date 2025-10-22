@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.Collections.Generic;
 using TradingApp.Models;
 
 
@@ -54,7 +55,8 @@ namespace TradingApp.Services
                 if (_stocks.StockList.TryGetValue(position.StockSymbol, out var stockInfo)) {
                     value += position.TotalQuantity * stockInfo.Price;
                 } else {
-                    continue;
+                    throw new KeyNotFoundException(
+                        $"Stock symbol '{position.StockSymbol}' not found in current price list.");
                 }
             }
             user.Portfolio.Value = value;
