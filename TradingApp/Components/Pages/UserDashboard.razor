@@ -1,11 +1,14 @@
 ﻿@page "/portfolio"
+@page "/portfolio/{userId:long}"
 @rendermode InteractiveServer
 
+@using System.Collections.Concurrent
 @using TradingApp.Data.Interfaces
 @inject IAuthenticationService AuthService
 @inject TradingApp.Services.PortfolioService PortfolioService
 @inject TradingApp.Models.Stocks Stocks
 @inject NavigationManager Nav
+@inject TradingApp.Data.UserManager UserManager
 
 <PageTitle>Portfolio</PageTitle>
 
@@ -24,7 +27,7 @@ else
 {
     <div class="container-fluid">
         <div class="mt-4 mb-4">
-            <h1 class="fw-bold text-primary">Welcome back, @AuthService.CurrentUser.FirstName!</h1>
+            <h1 class="fw-bold text-primary">@TargetUser?.FirstName's Portfolio</h1>
         </div>
 
         <div class="row g-4 mt-3">
@@ -84,7 +87,11 @@ else
                                 }
                                 else
                                 {
-                                    <tr><td colspan="7" class="text-center text-muted">No holdings found.</td></tr>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            No holdings found.
+                                        </td>
+                                    </tr>
                                 }
                             </tbody>
                         </table>
@@ -97,19 +104,40 @@ else
 
 @code {
     private HoldingsManager HoldingsManager = new();
+    [Parameter] public long? userId { get; set; }
+    private User? TargetUser;
 
     protected override async Task OnInitializedAsync()
     {
-        if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
-            return;
+        if (userId == null)
+        {
+            if (!AuthService.IsAuthenticated || AuthService.CurrentUser == null)
+                return;
 
-        var user = AuthService.CurrentUser;
+            TargetUser = AuthService.CurrentUser;
+        }
+        else
+        {
+            TargetUser = await UserManager.GetUserById(userId.Value);
+            if (TargetUser == null)
+            {
+                Nav.NavigateTo("/admin");
+                return;
+            }
+        }
 
-        PortfolioService.UpdateUserPortfolio(user);
+        try
+        {
+            PortfolioService.UpdateUserPortfolio(TargetUser);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Portfolio update skipped: {ex.Message}");
+        }
 
         HoldingsManager.LoadHoldings(
-            positions: user.Portfolio?.Positions ?? new(),
-            stockList: Stocks.StockList
+            positions: TargetUser.Portfolio?.Positions ?? new Dictionary<string, Position>(),
+            stockList: Stocks?.StockList ?? new ConcurrentDictionary<string, Stock>()
         );
     }
 }
