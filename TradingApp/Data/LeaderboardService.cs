@@ -38,14 +38,14 @@ namespace TradingApp.Data {
 
                 foreach (var user in users) {
                     // Calculate total portfolio value including stock positions
-                    decimal totalValue = await CalculateTotalPortfolioValue(connection, user.user_id, user.current_cash_balance);
+                    decimal totalValue = await CalculateTotalPortfolioValue(connection, (int)user.user_id, user.current_cash_balance);
                     decimal netProfit = totalValue - user.starting_cash_balance;
                     decimal percentageReturn = user.starting_cash_balance > 0 
                         ? (netProfit / user.starting_cash_balance) * 100 
                         : 0;
 
                     leaderboard.Add(new LeaderboardEntry {
-                        UserId = user.user_id,
+                        UserId = (int)user.user_id,
                         Username = user.username,
                         FirstName = user.first_name,
                         LastName = user.last_name,
