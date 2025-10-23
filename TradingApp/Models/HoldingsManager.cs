@@ -30,7 +30,7 @@ namespace TradingApp.Models
                         ? p.PurchaseLots.Average(lot => lot.PurchasePrice)
                         : 0;
 
-                    decimal dailyChange = avgPrice != 0 ? (stock.Price - avgPrice) / avgPrice : 0;
+                    decimal gainLoss = avgPrice != 0 ? (stock.Price - avgPrice) / avgPrice : 0;
 
                     return new Holding
                     {
@@ -39,7 +39,7 @@ namespace TradingApp.Models
                         Quantity = p.TotalQuantity,
                         AveragePrice = avgPrice,
                         CurrentPrice = stock.Price,
-                        DailyChange = dailyChange
+                        GainLoss = gainLoss
                     };
                 })
                 .Where(h => h != null)
@@ -60,7 +60,7 @@ namespace TradingApp.Models
         public int Quantity { get; set; }
         public decimal AveragePrice { get; set; }
         public decimal CurrentPrice { get; set; }
-        public decimal DailyChange { get; set; }
+        public decimal GainLoss { get; set; }
         public decimal PortfolioWeight { get; set; }
     }
 }
