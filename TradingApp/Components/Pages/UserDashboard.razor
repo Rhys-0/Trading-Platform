@@ -88,8 +88,8 @@ else
                                             <td>@((holding.Quantity * holding.CurrentPrice).ToString("C"))</td>
                                             <td>@holding.AveragePrice.ToString("C")</td>
                                             <td>@holding.CurrentPrice.ToString("C")</td>
-                                            <td class="@(holding.DailyChange >= 0 ? "text-success" : "text-danger")">
-                                                @(holding.DailyChange >= 0 ? "+" : "")@holding.DailyChange.ToString("P")
+                                            <td class="@(holding.GainLoss >= 0 ? "text-success" : "text-danger")">
+                                                @(holding.GainLoss >= 0 ? "+" : "")@holding.GainLoss.ToString("P")
                                             </td>
                                             <td>@((holding.PortfolioWeight * 100).ToString("N2"))%</td>
                                         </tr>
