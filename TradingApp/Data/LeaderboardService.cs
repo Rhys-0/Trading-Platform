@@ -97,6 +97,8 @@ namespace TradingApp.Data {
                         
                         _logger.LogDebug("Position: {Symbol} x {Quantity} @ ${Price} = ${Value}", 
                             stockSymbol, quantity, currentPrice, positionValue);
+                    } else {
+                        _logger.LogWarning("Stock symbol {Symbol} not found in current stock list", stockSymbol);
                     }
                 }
                 
