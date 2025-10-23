@@ -33,7 +33,8 @@ builder.Services.AddHttpClient<NewsService>(client =>
 
 // Background Services
 builder.Services.AddHostedService<StockPriceService>();
-builder.Services.AddHostedService<PortfolioUpdateService>();
+// PortfolioUpdateService disabled - causing crashes, not your feature
+// builder.Services.AddHostedService<PortfolioUpdateService>();
 
 // Authentication service - Register as Singleton so the state persists
 builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
