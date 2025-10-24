@@ -21,7 +21,7 @@
 ### Real-time stock price display
 **Responsible Student:** Hoang \
 **Model Files:** Stock.cs, Stocks.cs \
-**View / ViewModel Files:** StockPanel.razor (Buy/Sell features are made by Leo), StockQuote.razor, Stocks.razor\
+**View / ViewModel Files:** StockPanel.razor (Buy/Sell features are made by Leo), StockQuote.razor, Stocks.razor \
 **Other Files:** tradingview.js, tradingviewBridge.js, tvLoader.js
 
 ### Buy / sell order page
@@ -32,9 +32,9 @@
 
 ### Transaction history dashboard
 **Responsible Student:** Hoang \
-**Model Files:** N/A \
-**View / ViewModel Files:** N/A \
-**Other Files:** N/A  
+**Model Files:** Trade.cs \
+**View / ViewModel Files:** Trades.razor \
+**Other Files:** ITradeManager.cs, TradeManager.cs, download.js 
 
 ### User account creation page, login page and home page
 **Responsible Student:** Shilpi \

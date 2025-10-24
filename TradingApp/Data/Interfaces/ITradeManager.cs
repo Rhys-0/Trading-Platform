@@ -1,5 +1,4 @@
-﻿// Data/Interfaces/ITradeManager.cs
-using TradingApp.Models;
+﻿using TradingApp.Models;
 
 namespace TradingApp.Data.Interfaces {
     public interface ITradeManager {
